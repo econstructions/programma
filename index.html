@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="el">
 <head>
@@ -14,10 +13,19 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        
+        /* Landscape Print Rules */
         @media print {
             .no-print { display: none !important; }
-            body { background: white; color: black; }
-            .print-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+            body { background: white; color: black; padding: 0; margin: 0; }
+            .print-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+            #schedule-print-zone { width: 100% !important; overflow: visible !important; }
+            table { width: 100% !important; table-layout: fixed !important; }
+            th, td { font-size: 10px !important; padding: 4px !important; }
+            @page {
+                size: landscape;
+                margin: 0.5cm;
+            }
         }
     </style>
 </head>
@@ -32,7 +40,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">ShiftMaster Pro</h1>
-                    <p class="text-xs text-indigo-200">Σχεδιασμός Προγράμματος με Έξυπνους Διπλοθεσίτες</p>
+                    <p class="text-xs text-indigo-200">Σχεδιασμός Προγράμματος με Έξυπνους Διπλοθεσίτες & Ασφάλεια</p>
                 </div>
             </div>
             
@@ -127,7 +135,7 @@
                             </select>
                         </div>
 
-                        <!-- Νέα Επιλογή Διπλοθεσίτη (εμφανίζεται κυρίως για Αντλία) -->
+                        <!-- Επιλογή Διπλοθεσίτη -->
                         <div id="dual-role-container" class="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100">
                             <label class="flex items-center space-x-2.5 cursor-pointer">
                                 <input type="checkbox" id="emp-is-dual" class="w-4.5 h-4.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
@@ -155,28 +163,47 @@
                     </div>
                 </div>
 
-                <!-- Στήλη 3: Επιλογή Εποχιακών Βαρδιών & Αιτήματα Ρεπό -->
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[400px]">
-                    <h3 class="text-base font-bold text-slate-900 mb-3"><i class="fa-solid fa-sliders text-indigo-600 mr-1.5"></i>Εποχιακές Βάρδιες</h3>
+                <!-- Στήλη 3: Εποχιακές Βάρδιες, Αιτήματα & Backup -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[400px] justify-between space-y-4">
                     
-                    <div class="grid grid-cols-2 gap-2 mb-4">
-                        <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
-                            <input type="checkbox" id="shift-opt-split" onchange="toggleShiftOption('Split')" class="w-4 h-4 text-indigo-600 rounded">
-                            <span class="text-xs font-semibold text-slate-700">Σπαστή (Σ)</span>
-                        </label>
-                        <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
-                            <input type="checkbox" id="shift-opt-mid" onchange="toggleShiftOption('Mid')" class="w-4 h-4 text-indigo-600 rounded">
-                            <span class="text-xs font-semibold text-slate-700">Ενδιάμεση (Ε)</span>
-                        </label>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 mb-2"><i class="fa-solid fa-sliders text-indigo-600 mr-1.5"></i>Εποχιακές Βάρδιες</h3>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
+                                <input type="checkbox" id="shift-opt-split" onchange="toggleShiftOption('Split')" class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="text-xs font-semibold text-slate-700">Σπαστή (Σ)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
+                                <input type="checkbox" id="shift-opt-mid" onchange="toggleShiftOption('Mid')" class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="text-xs font-semibold text-slate-700">Ενδιάμεση (Ε)</span>
+                            </label>
+                        </div>
+
+                        <h3 class="text-sm font-bold text-slate-900 mb-1 border-t border-slate-100 pt-2 flex justify-between">
+                            <span><i class="fa-solid fa-envelope-open-text text-amber-500 mr-1.5"></i>Αιτήματα Ρεπό</span>
+                            <span id="badge-pending-count" class="text-xs text-amber-600 font-semibold bg-amber-50 px-2 rounded-full">0</span>
+                        </h3>
+                        <div class="max-h-[140px] overflow-y-auto divide-y divide-slate-100 pr-1" id="admin-requests-list">
+                            <!-- Dynamic Requests -->
+                        </div>
                     </div>
 
-                    <h3 class="text-sm font-bold text-slate-900 mb-2 border-t border-slate-100 pt-3 flex justify-between">
-                        <span><i class="fa-solid fa-envelope-open-text text-amber-500 mr-1.5"></i>Αιτήματα Ρεπό</span>
-                        <span id="badge-pending-count" class="text-xs text-amber-600 font-semibold bg-amber-50 px-2 rounded-full">0 εκκρεμή</span>
-                    </h3>
-                    <div class="flex-grow overflow-y-auto divide-y divide-slate-100 pr-1" id="admin-requests-list">
-                        <!-- Dynamic Requests -->
+                    <!-- Αντίγραφα Ασφαλείας (Backup) -->
+                    <div class="border-t border-slate-100 pt-3">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            <i class="fa-solid fa-database text-indigo-500"></i> Αντίγραφα Ασφαλείας
+                        </h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="exportBackup()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-file-export"></i> Εξαγωγή
+                            </button>
+                            <button onclick="triggerImport()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-file-import"></i> Εισαγωγή
+                            </button>
+                            <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="importBackup(event)">
+                        </div>
                     </div>
+
                 </div>
 
             </div>
@@ -194,6 +221,16 @@
                     
                     <!-- CONTROL BAR -->
                     <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto no-print">
+                        
+                        <!-- ΔΙΑΚΟΠΤΗΣ ΚΛΕΙΔΩΜΑΤΟΣ ΕΠΕΞΕΡΓΑΣΙΑΣ -->
+                        <div class="flex items-center space-x-2 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
+                            <i class="fa-solid fa-shield-halved text-indigo-600"></i>
+                            <label class="text-xs font-bold text-indigo-900 cursor-pointer flex items-center gap-1.5 select-none">
+                                <span>Κλείδωμα Πίνακα:</span>
+                                <input type="checkbox" id="grid-lock-toggle" checked onchange="toggleGridLock()" class="w-4 h-4 text-indigo-600 rounded border-indigo-300 focus:ring-indigo-500 cursor-pointer">
+                            </label>
+                        </div>
+
                         <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
                             <span class="text-xs font-semibold text-slate-500 px-2">Ορίζοντας:</span>
                             <select id="schedule-range" onchange="changeRange()" class="bg-white text-xs font-bold text-slate-800 rounded-lg px-2 py-1.5 focus:outline-none border-0 shadow-sm cursor-pointer">
@@ -240,7 +277,7 @@
                     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-100 border border-slate-200 block"></span> Ρεπό</span>
                 </div>
 
-                <!-- Schedule Grid -->
+                <!-- Schedule Grid (Landscape Prepared) -->
                 <div class="overflow-x-auto rounded-xl border border-slate-200" id="schedule-print-zone">
                     <table class="w-full min-w-[850px] border-collapse text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase tracking-wider text-xs">
@@ -387,17 +424,17 @@
 
     </main>
 
-    <!-- CUSTOM DIALOG MODAL (Saves from native alert/confirms) -->
+    <!-- CUSTOM CONFIRMATION & ALERT DIALOG MODAL -->
     <div id="custom-confirm-modal" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center space-x-3 text-red-600">
-                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-                <h3 class="text-lg font-bold text-slate-900">Επιβεβαίωση Διαγραφής</h3>
+            <div class="flex items-center space-x-3 text-indigo-600" id="confirm-modal-header">
+                <i class="fa-solid fa-triangle-exclamation text-2xl" id="confirm-modal-icon"></i>
+                <h3 class="text-lg font-bold text-slate-900" id="confirm-modal-title">Επιβεβαίωση</h3>
             </div>
             <p id="confirm-modal-text" class="text-sm text-slate-600">Είστε σίγουροι ότι θέλετε να προχωρήσετε;</p>
             <div class="flex justify-end space-x-3">
-                <button onclick="closeConfirmModal(false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">Ακύρωση</button>
-                <button id="btn-confirm-action" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold">Διαγραφή</button>
+                <button id="btn-confirm-cancel" onclick="closeConfirmModal(false)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold">Ακύρωση</button>
+                <button id="btn-confirm-action" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold">Συνέχεια</button>
             </div>
         </div>
     </div>
@@ -415,10 +452,11 @@
 
     <!-- Logic Script -->
     <script>
+        // Data Structures
         let employees = [];
         let requests = [];
-
-        // App Configurations
+        let schedule = {};
+        
         let activeShiftConfig = {
             Morning: true,
             Evening: true,
@@ -428,16 +466,100 @@
 
         let currentActiveWeek = 1;
         let scheduleHorizonWeeks = 1;
-
-        // Schedule State Structure: { [weekNumber]: { [employeeId]: { [day]: shift } } }
-        let schedule = {};
+        let gridIsLocked = true; // Table locks by default to prevent misclicks on touchscreens
 
         const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
-
-        // Confirm modal callback storage
         let confirmActionCallback = null;
 
-        // Core UI Helpers
+        // LOCAL STORAGE SYSTEM
+        function saveToLocalStorage() {
+            localStorage.setItem('shiftmaster_employees', JSON.stringify(employees));
+            localStorage.setItem('shiftmaster_requests', JSON.stringify(requests));
+            localStorage.setItem('shiftmaster_schedule', JSON.stringify(schedule));
+            localStorage.setItem('shiftmaster_config', JSON.stringify(activeShiftConfig));
+            localStorage.setItem('shiftmaster_horizon', scheduleHorizonWeeks.toString());
+        }
+
+        function loadFromLocalStorage() {
+            const savedEmp = localStorage.getItem('shiftmaster_employees');
+            const savedReq = localStorage.getItem('shiftmaster_requests');
+            const savedSched = localStorage.getItem('shiftmaster_schedule');
+            const savedConfig = localStorage.getItem('shiftmaster_config');
+            const savedHorizon = localStorage.getItem('shiftmaster_horizon');
+
+            if (savedEmp) employees = JSON.parse(savedEmp);
+            if (savedReq) requests = JSON.parse(savedReq);
+            if (savedSched) schedule = JSON.parse(savedSched);
+            if (savedConfig) {
+                activeShiftConfig = JSON.parse(savedConfig);
+                document.getElementById('shift-opt-split').checked = activeShiftConfig.Split;
+                document.getElementById('shift-opt-mid').checked = activeShiftConfig.Mid;
+            }
+            if (savedHorizon) {
+                scheduleHorizonWeeks = parseInt(savedHorizon);
+                document.getElementById('schedule-range').value = scheduleHorizonWeeks;
+            }
+        }
+
+        // BACKUP SYSTEM (IMPORT / EXPORT JSON)
+        function exportBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                employees,
+                requests,
+                schedule,
+                activeShiftConfig,
+                scheduleHorizonWeeks
+            }, null, 2));
+            
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `shiftmaster_backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Το αρχείο αντιγράφου ασφαλείας εξήχθη!");
+        }
+
+        function triggerImport() {
+            document.getElementById('import-file-input').click();
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.employees && importedData.schedule) {
+                        employees = importedData.employees;
+                        requests = importedData.requests || [];
+                        schedule = importedData.schedule;
+                        if (importedData.activeShiftConfig) activeShiftConfig = importedData.activeShiftConfig;
+                        if (importedData.scheduleHorizonWeeks) scheduleHorizonWeeks = importedData.scheduleHorizonWeeks;
+
+                        // Sync UI with imported values
+                        document.getElementById('shift-opt-split').checked = activeShiftConfig.Split;
+                        document.getElementById('shift-opt-mid').checked = activeShiftConfig.Mid;
+                        document.getElementById('schedule-range').value = scheduleHorizonWeeks;
+
+                        saveToLocalStorage();
+                        renderAll();
+                        showToast("Επιτυχής εισαγωγή αντιγράφου ασφαλείας!");
+                    } else {
+                        showToast("Μη έγκυρο αρχείο αντιγράφου!", false);
+                    }
+                } catch(err) {
+                    showToast("Σφάλμα κατά την ανάγνωση του αρχείου JSON!", false);
+                }
+            };
+            reader.readAsText(file);
+            // reset file input
+            event.target.value = '';
+        }
+
+        // Core UI & Modals Helpers
         function switchView(view) {
             const adminBtn = document.getElementById('btn-admin-view');
             const staffBtn = document.getElementById('btn-staff-view');
@@ -481,9 +603,25 @@
             }, 3000);
         }
 
-        // Custom Confirmation Dialog
-        function triggerConfirmModal(text, actionCallback) {
+        // Custom Confirmation dialog (replaces native browser alert/confirms)
+        function triggerConfirmModal(title, text, actionCallback, isWarning = false) {
+            document.getElementById('confirm-modal-title').textContent = title;
             document.getElementById('confirm-modal-text').textContent = text;
+            
+            const header = document.getElementById('confirm-modal-header');
+            const icon = document.getElementById('confirm-modal-icon');
+            const actionBtn = document.getElementById('btn-confirm-action');
+
+            if (isWarning) {
+                header.className = "flex items-center space-x-3 text-red-600";
+                icon.className = "fa-solid fa-triangle-exclamation text-2xl";
+                actionBtn.className = "px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold";
+            } else {
+                header.className = "flex items-center space-x-3 text-indigo-600";
+                icon.className = "fa-solid fa-shield-halved text-2xl";
+                actionBtn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold";
+            }
+
             document.getElementById('custom-confirm-modal').classList.remove('hidden');
             confirmActionCallback = actionCallback;
         }
@@ -498,10 +636,18 @@
 
         document.getElementById('btn-confirm-action').onclick = () => closeConfirmModal(true);
 
+        function toggleGridLock() {
+            gridIsLocked = document.getElementById('grid-lock-toggle').checked;
+            if (gridIsLocked) {
+                showToast("Ο πίνακας κλειδώθηκε για την αποφυγή τυχαίων αλλαγών.");
+            } else {
+                showToast("Ο πίνακας ξεκλειδώθηκε. Μπορείτε να κάνετε αλλαγές.", false);
+            }
+        }
+
         function checkRoleConstraint() {
             const role = document.getElementById('emp-role').value;
             const dualContainer = document.getElementById('dual-role-container');
-            // Enable dual position primarily if they are registered as "Αντλία"
             if (role === 'Αντλία') {
                 dualContainer.style.opacity = "1";
                 dualContainer.style.pointerEvents = "auto";
@@ -516,6 +662,7 @@
             scheduleHorizonWeeks = parseInt(document.getElementById('schedule-range').value);
             currentActiveWeek = 1;
             initScheduleStructure();
+            saveToLocalStorage();
             renderAll();
             showToast(`Ο ορίζοντας προγράμματος άλλαξε σε ${scheduleHorizonWeeks} εβδομάδες.`);
         }
@@ -542,11 +689,13 @@
 
         function toggleShiftOption(shiftType) {
             activeShiftConfig[shiftType] = document.getElementById(`shift-opt-${shiftType.toLowerCase()}`).checked;
+            
             const splitLegend = document.getElementById('legend-split');
             const midLegend = document.getElementById('legend-mid');
             if (activeShiftConfig.Split) splitLegend.classList.remove('hidden'); else splitLegend.classList.add('hidden');
             if (activeShiftConfig.Mid) midLegend.classList.remove('hidden'); else midLegend.classList.add('hidden');
 
+            saveToLocalStorage();
             showToast("Η διαθεσιμότητα των βαρδιών ενημερώθηκε!");
             renderPlanner();
         }
@@ -566,14 +715,7 @@
                 const empIndex = employees.findIndex(emp => emp.id === editId);
                 if (empIndex !== -1) {
                     employees[empIndex] = { 
-                        id: editId, 
-                        name, 
-                        role, 
-                        contractDays: contract, 
-                        shiftPreference: shiftPref, 
-                        fixedDayOff: fixedOff, 
-                        weekendRule,
-                        isDualRole: isDual
+                        id: editId, name, role, contractDays: contract, shiftPreference: shiftPref, fixedDayOff: fixedOff, weekendRule, isDualRole: isDual
                     };
                     showToast(`Οι ρυθμίσεις του/της ${name} ενημερώθηκαν!`);
                 }
@@ -581,14 +723,7 @@
             } else {
                 const newId = 'emp-' + Date.now();
                 const newEmp = { 
-                    id: newId, 
-                    name, 
-                    role, 
-                    contractDays: contract, 
-                    shiftPreference: shiftPref, 
-                    fixedDayOff: fixedOff, 
-                    weekendRule,
-                    isDualRole: isDual
+                    id: newId, name, role, contractDays: contract, shiftPreference: shiftPref, fixedDayOff: fixedOff, weekendRule, isDualRole: isDual
                 };
                 employees.push(newEmp);
                 showToast(`Ο/Η ${name} προστέθηκε στην ομάδα!`);
@@ -597,6 +732,7 @@
             }
 
             initScheduleStructure();
+            saveToLocalStorage();
             renderAll();
         }
 
@@ -641,14 +777,20 @@
             const emp = employees.find(e => e.id === id);
             if (!emp) return;
 
-            triggerConfirmModal(`Είστε σίγουροι ότι θέλετε να διαγράψετε τον εργαζόμενο ${emp.name};`, () => {
-                employees = employees.filter(e => e.id !== id);
-                for (let w in schedule) {
-                    delete schedule[w][id];
-                }
-                showToast(`Ο/Η ${emp.name} διαγράφηκε.`);
-                renderAll();
-            });
+            triggerConfirmModal(
+                "Επιβεβαίωση Διαγραφής",
+                `Θέλετε σίγουρα να διαγράψετε τον/την ${emp.name} από την ομάδα;`,
+                () => {
+                    employees = employees.filter(e => e.id !== id);
+                    for (let w in schedule) {
+                        delete schedule[w][id];
+                    }
+                    saveToLocalStorage();
+                    showToast(`Ο/Η ${emp.name} διαγράφηκε.`);
+                    renderAll();
+                },
+                true
+            );
         }
 
         function handleRequestLeave(e) {
@@ -680,8 +822,9 @@
 
             requests.push(newReq);
             document.getElementById('request-reason').value = '';
-            showToast("Το αίτημα υποβλήθηκε επιτυχώς!");
+            saveToLocalStorage();
             renderAll();
+            showToast("Το αίτημα υποβλήθηκε επιτυχώς!");
         }
 
         function approveRequest(reqId) {
@@ -692,8 +835,9 @@
                 if (schedule[w] && schedule[w][req.employeeId]) {
                     schedule[w][req.employeeId][req.day] = 'Off';
                 }
-                showToast("Το ρεπό εγκρίθηκε και κλειδώθηκε στο πρόγραμμα!");
+                saveToLocalStorage();
                 renderAll();
+                showToast("Το ρεπό εγκρίθηκε και κλειδώθηκε στο πρόγραμμα!");
             }
         }
 
@@ -708,46 +852,77 @@
                         schedule[w][req.employeeId][req.day] = '';
                     }
                 }
-                showToast("Το αίτημα απορρίφθηκε.");
+                saveToLocalStorage();
                 renderAll();
+                showToast("Το αίτημα απορρίφθηκε.");
             }
         }
 
+        // Cycle through shifts on grid cell click
         function cycleShift(empId, day) {
             const currentShift = schedule[currentActiveWeek][empId][day];
-            
+            const empName = employees.find(e => e.id === empId)?.name || 'εργαζόμενου';
+
             let rotationPool = ['']; 
             if (activeShiftConfig.Morning) rotationPool.push('Morning');
-            if (activeShiftConfig.Morning) rotationPool.push('Morning-Café'); // Support manual setting for dual roles
+            if (activeShiftConfig.Morning) rotationPool.push('Morning-Café');
             if (activeShiftConfig.Evening) rotationPool.push('Evening');
-            if (activeShiftConfig.Evening) rotationPool.push('Evening-Café'); // Support manual setting for dual roles
+            if (activeShiftConfig.Evening) rotationPool.push('Evening-Café');
             if (activeShiftConfig.Split) rotationPool.push('Split');
             if (activeShiftConfig.Mid) rotationPool.push('Mid');
             rotationPool.push('Off');
 
             let currentIndex = rotationPool.indexOf(currentShift);
             if (currentIndex === -1) currentIndex = 0;
-
             let nextIndex = (currentIndex + 1) % rotationPool.length;
-            schedule[currentActiveWeek][empId][day] = rotationPool[nextIndex];
-            renderAll();
+            const nextShift = rotationPool[nextIndex];
+
+            // Action to execute if confirmed
+            const applyChange = () => {
+                schedule[currentActiveWeek][empId][day] = nextShift;
+                saveToLocalStorage();
+                renderPlanner();
+                showToast("Η βάρδια ενημερώθηκε επιτυχώς!");
+            };
+
+            // IF THE GRID IS LOCKED: Ask if they want to override the lock to edit
+            if (gridIsLocked) {
+                triggerConfirmModal(
+                    "Ξεκλείδωμα & Αλλαγή",
+                    `Ο πίνακας είναι κλειδωμένος. Θέλετε σίγουρα να αλλάξετε τη βάρδια του/της ${empName} για την ημέρα ${day};`,
+                    () => {
+                        // Temporarily unlock for this change
+                        applyChange();
+                    }
+                );
+            } else {
+                // If already unlocked, apply change immediately
+                applyChange();
+            }
         }
 
         function clearPlanner() {
-            employees.forEach(emp => {
-                daysOfWeek.forEach(day => {
-                    const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === currentActiveWeek && r.status === 'approved');
-                    const isFixedOff = emp.fixedDayOff === day;
+            triggerConfirmModal(
+                "Καθαρισμός Προγράμματος",
+                "Θέλετε να καθαρίσετε όλες τις βάρδιες αυτής της εβδομάδας; (Τα εγκεκριμένα & στάνταρ ρεπό θα διατηρηθούν)",
+                () => {
+                    employees.forEach(emp => {
+                        daysOfWeek.forEach(day => {
+                            const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === currentActiveWeek && r.status === 'approved');
+                            const isFixedOff = emp.fixedDayOff === day;
 
-                    if (hasApprovedReq || isFixedOff) {
-                        schedule[currentActiveWeek][emp.id][day] = 'Off';
-                    } else {
-                        schedule[currentActiveWeek][emp.id][day] = '';
-                    }
-                });
-            });
-            showToast("Το πρόγραμμα της εβδομάδας καθαρίστηκε.");
-            renderAll();
+                            if (hasApprovedReq || isFixedOff) {
+                                schedule[currentActiveWeek][emp.id][day] = 'Off';
+                            } else {
+                                schedule[currentActiveWeek][emp.id][day] = '';
+                            }
+                        });
+                    });
+                    saveToLocalStorage();
+                    renderAll();
+                    showToast("Το πρόγραμμα της εβδομάδας καθαρίστηκε.");
+                }
+            );
         }
 
         function shuffle(array) {
@@ -767,125 +942,127 @@
                 return;
             }
 
-            for (let w = 1; w <= scheduleHorizonWeeks; w++) {
-                
-                let dailyCounts = {
-                    'Αντλία': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 },
-                    'Καφέ': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 }
-                };
+            triggerConfirmModal(
+                "Εκτέλεση Λοταρίας",
+                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι υπάρχουσες βάρδιες που δεν είναι κλειδωμένα ρεπό θα ξαναμοιραστούν τυχαία.`,
+                () => {
+                    for (let w = 1; w <= scheduleHorizonWeeks; w++) {
+                        
+                        let dailyCounts = {
+                            'Αντλία': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 },
+                            'Καφέ': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 }
+                        };
 
-                let assistants = employees.filter(e => e.role === 'Βοηθός Διαχειριστή');
-                let regularStaff = employees.filter(e => e.role !== 'Βοηθός Διαχειριστή');
+                        let assistants = employees.filter(e => e.role === 'Βοηθός Διαχειριστή');
+                        let regularStaff = employees.filter(e => e.role !== 'Βοηθός Διαχειριστή');
 
-                let shuffledCore = shuffle([...regularStaff]);
-                let shuffledAssistants = shuffle([...assistants]);
-                let finalOrder = [...shuffledCore, ...shuffledAssistants];
+                        let shuffledCore = shuffle([...regularStaff]);
+                        let shuffledAssistants = shuffle([...assistants]);
+                        let finalOrder = [...shuffledCore, ...shuffledAssistants];
 
-                // Step 1: Assign off days first
-                finalOrder.forEach(emp => {
-                    const targetWorkDays = emp.contractDays;
-                    const totalOffDaysNeeded = 7 - targetWorkDays;
+                        // Assign Off Days
+                        finalOrder.forEach(emp => {
+                            const targetWorkDays = emp.contractDays;
+                            const totalOffDaysNeeded = 7 - targetWorkDays;
 
-                    let currentEmployeeSchedule = {};
-                    let designatedOffsCount = 0;
+                            let currentEmployeeSchedule = {};
+                            let designatedOffsCount = 0;
 
-                    daysOfWeek.forEach(day => {
-                        const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === w && r.status === 'approved');
-                        const isFixedOff = emp.fixedDayOff === day;
+                            daysOfWeek.forEach(day => {
+                                const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === w && r.status === 'approved');
+                                const isFixedOff = emp.fixedDayOff === day;
 
-                        let lockedWeekendOff = false;
-                        if (emp.weekendRule === '2_στα_4' && (day === 'Σάββατο' || day === 'Κυριακή')) {
-                            const seed = (parseInt(emp.id.replace(/\D/g, '')) || 1) + w;
-                            if (seed % 2 === 0) {
-                                lockedWeekendOff = true;
+                                let lockedWeekendOff = false;
+                                if (emp.weekendRule === '2_στα_4' && (day === 'Σάββατο' || day === 'Κυριακή')) {
+                                    const seed = (parseInt(emp.id.replace(/\D/g, '')) || 1) + w;
+                                    if (seed % 2 === 0) {
+                                        lockedWeekendOff = true;
+                                    }
+                                }
+                                if (emp.weekendRule === 'Ποτέ' && (day === 'Σάββατο' || day === 'Κυριακή')) {
+                                    lockedWeekendOff = true;
+                                }
+
+                                if (hasApprovedReq || isFixedOff || lockedWeekendOff) {
+                                    currentEmployeeSchedule[day] = 'Off';
+                                    designatedOffsCount++;
+                                } else {
+                                    currentEmployeeSchedule[day] = '';
+                                }
+                            });
+
+                            let remainingEmptyDays = daysOfWeek.filter(day => currentEmployeeSchedule[day] === '');
+                            let extraOffsNeeded = Math.max(0, totalOffDaysNeeded - designatedOffsCount);
+
+                            shuffle(remainingEmptyDays);
+                            for (let i = 0; i < Math.min(extraOffsNeeded, remainingEmptyDays.length); i++) {
+                                const chosenDay = remainingEmptyDays[i];
+                                currentEmployeeSchedule[chosenDay] = 'Off';
                             }
-                        }
-                        if (emp.weekendRule === 'Ποτέ' && (day === 'Σάββατο' || day === 'Κυριακή')) {
-                            lockedWeekendOff = true;
-                        }
 
-                        if (hasApprovedReq || isFixedOff || lockedWeekendOff) {
-                            currentEmployeeSchedule[day] = 'Off';
-                            designatedOffsCount++;
-                        } else {
-                            currentEmployeeSchedule[day] = '';
-                        }
-                    });
+                            schedule[w][emp.id] = currentEmployeeSchedule;
+                        });
 
-                    let remainingEmptyDays = daysOfWeek.filter(day => currentEmployeeSchedule[day] === '');
-                    let extraOffsNeeded = Math.max(0, totalOffDaysNeeded - designatedOffsCount);
+                        // Cover Standard and Special shifts
+                        daysOfWeek.forEach(day => {
+                            let coffeeStaffToday = employees.filter(e => e.role === 'Καφέ');
+                            let isCoffeeStaffOff = coffeeStaffToday.every(e => schedule[w][e.id][day] === 'Off');
 
-                    shuffle(remainingEmptyDays);
-                    for (let i = 0; i < Math.min(extraOffsNeeded, remainingEmptyDays.length); i++) {
-                        const chosenDay = remainingEmptyDays[i];
-                        currentEmployeeSchedule[chosenDay] = 'Off';
+                            finalOrder.forEach(emp => {
+                                if (schedule[w][emp.id][day] === 'Off') return;
+
+                                let possibleShifts = [];
+                                if (emp.shiftPreference === 'Μόνο Πρωί') {
+                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                                } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
+                                    if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                                } else {
+                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                                    if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                                    if (activeShiftConfig.Split) possibleShifts.push('Split');
+                                    if (activeShiftConfig.Mid) possibleShifts.push('Mid');
+                                }
+
+                                if (possibleShifts.length === 0) {
+                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                                    else if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                                }
+
+                                let chosenShift = possibleShifts[Math.floor(Math.random() * possibleShifts.length)];
+
+                                // Dual Role adjustment
+                                if (emp.isDualRole && emp.role === 'Αντλία') {
+                                    if (chosenShift === 'Morning' && isCoffeeStaffOff) {
+                                        chosenShift = 'Morning-Café';
+                                        isCoffeeStaffOff = false;
+                                    } else if (chosenShift === 'Evening') {
+                                        chosenShift = 'Evening-Café';
+                                    }
+                                }
+
+                                // Assistant Manager covering Pump needs
+                                if (emp.role === 'Βοηθός Διαχειριστή' && chosenShift === 'Morning') {
+                                    if (dailyCounts['Αντλία'][day] < 1) {
+                                        dailyCounts['Αντλία'][day]++;
+                                    }
+                                }
+
+                                schedule[w][emp.id][day] = chosenShift;
+
+                                if (emp.role === 'Αντλία' || emp.isDualRole) {
+                                    dailyCounts['Αντλία'][day]++;
+                                } else if (emp.role === 'Καφέ') {
+                                    dailyCounts['Καφέ'][day]++;
+                                }
+                            });
+                        });
                     }
 
-                    // Save off days structure
-                    schedule[w][emp.id] = currentEmployeeSchedule;
-                });
-
-                // Step 2: Cover standard and special shifts
-                daysOfWeek.forEach(day => {
-                    // Check if regular Coffee staff is off today
-                    let coffeeStaffToday = employees.filter(e => e.role === 'Καφέ');
-                    let isCoffeeStaffOff = coffeeStaffToday.every(e => schedule[w][e.id][day] === 'Off');
-
-                    finalOrder.forEach(emp => {
-                        if (schedule[w][emp.id][day] === 'Off') return; // skip if off
-
-                        let possibleShifts = [];
-                        if (emp.shiftPreference === 'Μόνο Πρωί') {
-                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                        } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
-                            if (activeShiftConfig.Evening) possibleShifts.push('Evening');
-                        } else {
-                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                            if (activeShiftConfig.Evening) possibleShifts.push('Evening');
-                            if (activeShiftConfig.Split) possibleShifts.push('Split');
-                            if (activeShiftConfig.Mid) possibleShifts.push('Mid');
-                        }
-
-                        if (possibleShifts.length === 0) {
-                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                            else if (activeShiftConfig.Evening) possibleShifts.push('Evening');
-                        }
-
-                        let chosenShift = possibleShifts[Math.floor(Math.random() * possibleShifts.length)];
-
-                        // Special Dual-role (Διπλοθεσίτης) check
-                        if (emp.isDualRole && emp.role === 'Αντλία') {
-                            if (chosenShift === 'Morning' && isCoffeeStaffOff) {
-                                // Cover coffee morning off!
-                                chosenShift = 'Morning-Café';
-                                isCoffeeStaffOff = false; // morning off is now covered
-                            } else if (chosenShift === 'Evening') {
-                                // "Όταν είναι απόγευμα κρατάνε ανοιχτό το καφέ"
-                                chosenShift = 'Evening-Café';
-                            }
-                        }
-
-                        // Wildcard fallback (Βοηθός Διαχειριστή) check
-                        if (emp.role === 'Βοηθός Διαχειριστή' && chosenShift === 'Morning') {
-                            if (dailyCounts['Αντλία'][day] < 1) {
-                                dailyCounts['Αντλία'][day]++;
-                            }
-                        }
-
-                        schedule[w][emp.id][day] = chosenShift;
-
-                        // Add to counters
-                        if (emp.role === 'Αντλία' || emp.isDualRole) {
-                            dailyCounts['Αντλία'][day]++;
-                        } else if (emp.role === 'Καφέ') {
-                            dailyCounts['Καφέ'][day]++;
-                        }
-                    });
-                });
-            }
-
-            showToast("Η λοταρία ολοκληρώθηκε! Οι διπλοθεσίτες κάλυψαν τις ανάγκες του καφέ.");
-            renderAll();
+                    saveToLocalStorage();
+                    renderAll();
+                    showToast("Η λοταρία ολοκληρώθηκε! Το πρόγραμμα μοιράστηκε δίκαια με βάση τις συμφωνίες.");
+                }
+            );
         }
 
         // RENDER PIPELINES
@@ -902,7 +1079,7 @@
         function renderStats() {
             document.getElementById('badge-total-emp').textContent = employees.length;
             const pending = requests.filter(r => r.status === 'pending').length;
-            document.getElementById('badge-pending-count').textContent = `${pending} εκκρεμή`;
+            document.getElementById('badge-pending-count').textContent = pending;
         }
 
         function renderEmployeeList() {
@@ -976,7 +1153,7 @@
             const pending = requests.filter(r => r.status === 'pending');
 
             if (pending.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-6">Δεν υπάρχουν εκκρεμή αιτήματα.</p>';
+                container.innerHTML = '<p class="text-[11px] text-slate-400 italic text-center py-4">Δεν υπάρχουν εκκρεμή αιτήματα.</p>';
                 return;
             }
 
@@ -987,10 +1164,10 @@
                 const div = document.createElement('div');
                 div.className = "py-2.5 flex justify-between items-center gap-2";
                 div.innerHTML = `
-                    <div class="text-xs space-y-0.5">
+                    <div class="text-[11px] space-y-0.5">
                         <div class="font-bold text-slate-800">${emp.name}</div>
-                        <div class="text-indigo-600 font-semibold text-[10px]"><i class="fa-solid fa-calendar-alt"></i> Εβδ. ${req.week} - ${req.day}</div>
-                        ${req.reason ? `<p class="text-[10px] text-slate-500 italic">"${req.reason}"</p>` : ''}
+                        <div class="text-indigo-600 font-semibold text-[9px]"><i class="fa-solid fa-calendar-alt"></i> Εβδ. ${req.week} - ${req.day}</div>
+                        ${req.reason ? `<p class="text-[9px] text-slate-500 italic">"${req.reason}"</p>` : ''}
                     </div>
                     <div class="flex items-center gap-1">
                         <button onclick="declineRequest('${req.id}')" class="p-1 text-red-600 hover:bg-red-50 rounded" title="Απόρριψη"><i class="fa-solid fa-xmark"></i></button>
@@ -1190,6 +1367,7 @@
         }
 
         window.onload = function() {
+            loadFromLocalStorage();
             checkRoleConstraint();
             renderAll();
         };
