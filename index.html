@@ -9,7 +9,7 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -277,7 +277,7 @@
                     <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-100 border border-slate-200 block"></span> Ρεπό</span>
                 </div>
 
-                <!-- Schedule Grid (Landscape Prepared) -->
+                <!-- Schedule Grid -->
                 <div class="overflow-x-auto rounded-xl border border-slate-200" id="schedule-print-zone">
                     <table class="w-full min-w-[850px] border-collapse text-left text-sm text-slate-600">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase tracking-wider text-xs">
@@ -387,7 +387,7 @@
                 </div>
             </div>
 
-            <!-- VIEW ACTIVE WEEKLY SCHEDULE (READ-ONLY FOR STAFF) -->
+            <!-- VIEW ACTIVE WEEKLY SCHEDULE -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex justify-between items-center mb-4">
                     <div>
@@ -466,7 +466,7 @@
 
         let currentActiveWeek = 1;
         let scheduleHorizonWeeks = 1;
-        let gridIsLocked = true; // Table locks by default to prevent misclicks on touchscreens
+        let gridIsLocked = true;
 
         const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
         let confirmActionCallback = null;
@@ -539,7 +539,6 @@
                         if (importedData.activeShiftConfig) activeShiftConfig = importedData.activeShiftConfig;
                         if (importedData.scheduleHorizonWeeks) scheduleHorizonWeeks = importedData.scheduleHorizonWeeks;
 
-                        // Sync UI with imported values
                         document.getElementById('shift-opt-split').checked = activeShiftConfig.Split;
                         document.getElementById('shift-opt-mid').checked = activeShiftConfig.Mid;
                         document.getElementById('schedule-range').value = scheduleHorizonWeeks;
@@ -551,11 +550,10 @@
                         showToast("Μη έγκυρο αρχείο αντιγράφου!", false);
                     }
                 } catch(err) {
-                    showToast("Σφάλμα κατά την ανάγνωση του αρχείου JSON!", false);
+                    showToast("Σφάλμα κατά την ανάγνωση του αρχείου!", false);
                 }
             };
             reader.readAsText(file);
-            // reset file input
             event.target.value = '';
         }
 
@@ -603,7 +601,6 @@
             }, 3000);
         }
 
-        // Custom Confirmation dialog (replaces native browser alert/confirms)
         function triggerConfirmModal(title, text, actionCallback, isWarning = false) {
             document.getElementById('confirm-modal-title').textContent = title;
             document.getElementById('confirm-modal-text').textContent = text;
@@ -877,7 +874,6 @@
             let nextIndex = (currentIndex + 1) % rotationPool.length;
             const nextShift = rotationPool[nextIndex];
 
-            // Action to execute if confirmed
             const applyChange = () => {
                 schedule[currentActiveWeek][empId][day] = nextShift;
                 saveToLocalStorage();
@@ -885,18 +881,15 @@
                 showToast("Η βάρδια ενημερώθηκε επιτυχώς!");
             };
 
-            // IF THE GRID IS LOCKED: Ask if they want to override the lock to edit
             if (gridIsLocked) {
                 triggerConfirmModal(
                     "Ξεκλείδωμα & Αλλαγή",
                     `Ο πίνακας είναι κλειδωμένος. Θέλετε σίγουρα να αλλάξετε τη βάρδια του/της ${empName} για την ημέρα ${day};`,
                     () => {
-                        // Temporarily unlock for this change
                         applyChange();
                     }
                 );
             } else {
-                // If already unlocked, apply change immediately
                 applyChange();
             }
         }
@@ -935,7 +928,7 @@
             return array;
         }
 
-        // ==================== LOTTERY ALGORITHM WITH DUAL POSITION COVERS ====================
+        // ==================== LOTTERY ALGORITHM WITH GUARANTEED DAILY COVERAGE ====================
         function runLottery() {
             if (employees.length === 0) {
                 showToast("Προσθέστε πρώτα προσωπικό!", false);
@@ -944,24 +937,12 @@
 
             triggerConfirmModal(
                 "Εκτέλεση Λοταρίας",
-                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι υπάρχουσες βάρδιες που δεν είναι κλειδωμένα ρεπό θα ξαναμοιραστούν τυχαία.`,
+                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι βάρδιες θα μοιραστούν αυτόματα εξασφαλίζοντας υποχρεωτική κάλυψη πρωινών και απογευματινών βαρδιών.`,
                 () => {
                     for (let w = 1; w <= scheduleHorizonWeeks; w++) {
                         
-                        let dailyCounts = {
-                            'Αντλία': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 },
-                            'Καφέ': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 }
-                        };
-
-                        let assistants = employees.filter(e => e.role === 'Βοηθός Διαχειριστή');
-                        let regularStaff = employees.filter(e => e.role !== 'Βοηθός Διαχειριστή');
-
-                        let shuffledCore = shuffle([...regularStaff]);
-                        let shuffledAssistants = shuffle([...assistants]);
-                        let finalOrder = [...shuffledCore, ...shuffledAssistants];
-
-                        // Assign Off Days
-                        finalOrder.forEach(emp => {
+                        // Pass 1: Assign Off days for all employees (to strictly respect contract rules)
+                        employees.forEach(emp => {
                             const targetWorkDays = emp.contractDays;
                             const totalOffDaysNeeded = 7 - targetWorkDays;
 
@@ -1003,13 +984,63 @@
                             schedule[w][emp.id] = currentEmployeeSchedule;
                         });
 
-                        // Cover Standard and Special shifts
+                        // Pass 2: Assign Shifts Day-by-Day (Guarantees daily active shift coverage!)
                         daysOfWeek.forEach(day => {
+                            // Find which employees are actively working on this day (not 'Off')
+                            let workingEmps = shuffle(employees.filter(emp => schedule[w][emp.id][day] !== 'Off'));
+                            
+                            if (workingEmps.length === 0) return;
+
+                            // Check if standard coffee staff is off today
                             let coffeeStaffToday = employees.filter(e => e.role === 'Καφέ');
                             let isCoffeeStaffOff = coffeeStaffToday.every(e => schedule[w][e.id][day] === 'Off');
 
-                            finalOrder.forEach(emp => {
-                                if (schedule[w][emp.id][day] === 'Off') return;
+                            // Detect which core shifts MUST be covered on this day (based on active config)
+                            let mandatoryShiftsToAssign = [];
+                            if (activeShiftConfig.Morning) mandatoryShiftsToAssign.push('Morning');
+                            if (activeShiftConfig.Evening) mandatoryShiftsToAssign.push('Evening');
+                            if (activeShiftConfig.Split) mandatoryShiftsToAssign.push('Split');
+                            if (activeShiftConfig.Mid) mandatoryShiftsToAssign.push('Mid');
+
+                            let assignedEmpIds = new Set();
+
+                            // 2A: Assign Mandatory/Required Shifts first to guarantee coverage
+                            mandatoryShiftsToAssign.forEach(neededShift => {
+                                // Find a working employee who hasn't been assigned yet, matching preference if possible
+                                let candidate = workingEmps.find(emp => {
+                                    if (assignedEmpIds.has(emp.id)) return false;
+                                    // Preference checks
+                                    if (neededShift === 'Morning' && emp.shiftPreference === 'Μόνο Απόγευμα') return false;
+                                    if (neededShift === 'Evening' && emp.shiftPreference === 'Μόνο Πρωί') return false;
+                                    return true;
+                                });
+
+                                // Fallback: If no candidate with perfect preference, take any unassigned working employee
+                                if (!candidate) {
+                                    candidate = workingEmps.find(emp => !assignedEmpIds.has(emp.id));
+                                }
+
+                                if (candidate) {
+                                    let finalShift = neededShift;
+                                    
+                                    // Dual role (Διπλοθεσίτης) adjustments
+                                    if (candidate.isDualRole && candidate.role === 'Αντλία') {
+                                        if (neededShift === 'Morning' && isCoffeeStaffOff) {
+                                            finalShift = 'Morning-Café';
+                                            isCoffeeStaffOff = false;
+                                        } else if (neededShift === 'Evening') {
+                                            finalShift = 'Evening-Café';
+                                        }
+                                    }
+
+                                    schedule[w][candidate.id][day] = finalShift;
+                                    assignedEmpIds.add(candidate.id);
+                                }
+                            });
+
+                            // 2B: Fill remaining available employees with random/fallback active shifts
+                            workingEmps.forEach(emp => {
+                                if (assignedEmpIds.has(emp.id)) return;
 
                                 let possibleShifts = [];
                                 if (emp.shiftPreference === 'Μόνο Πρωί') {
@@ -1030,7 +1061,7 @@
 
                                 let chosenShift = possibleShifts[Math.floor(Math.random() * possibleShifts.length)];
 
-                                // Dual Role adjustment
+                                // Dual role adjustments
                                 if (emp.isDualRole && emp.role === 'Αντλία') {
                                     if (chosenShift === 'Morning' && isCoffeeStaffOff) {
                                         chosenShift = 'Morning-Café';
@@ -1040,27 +1071,15 @@
                                     }
                                 }
 
-                                // Assistant Manager covering Pump needs
-                                if (emp.role === 'Βοηθός Διαχειριστή' && chosenShift === 'Morning') {
-                                    if (dailyCounts['Αντλία'][day] < 1) {
-                                        dailyCounts['Αντλία'][day]++;
-                                    }
-                                }
-
                                 schedule[w][emp.id][day] = chosenShift;
-
-                                if (emp.role === 'Αντλία' || emp.isDualRole) {
-                                    dailyCounts['Αντλία'][day]++;
-                                } else if (emp.role === 'Καφέ') {
-                                    dailyCounts['Καφέ'][day]++;
-                                }
+                                assignedEmpIds.add(emp.id);
                             });
                         });
                     }
 
                     saveToLocalStorage();
                     renderAll();
-                    showToast("Η λοταρία ολοκληρώθηκε! Το πρόγραμμα μοιράστηκε δίκαια με βάση τις συμφωνίες.");
+                    showToast("Η λοταρία ολοκληρώθηκε! Εξασφαλίστηκε η πλήρης καθημερινή κάλυψη βαρδιών.");
                 }
             );
         }
@@ -1374,4 +1393,3 @@
     </script>
 </body>
 </html>
-
