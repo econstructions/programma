@@ -1,0 +1,1112 @@
+
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Σύστημα Διαχείρισης & Λοταρίας Προγράμματος</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .print-card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header / Navigation -->
+    <header class="bg-indigo-950 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl shadow-inner">
+                    <i class="fa-solid fa-dice text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">ShiftMaster Pro</h1>
+                    <p class="text-xs text-indigo-200">Επαγγελματικός Σχεδιασμός & Αυτόματη Λοταρία</p>
+                </div>
+            </div>
+            
+            <!-- Quick View Toggle (Admin vs Employee View) -->
+            <div class="flex bg-indigo-900 p-1 rounded-lg border border-indigo-800">
+                <button id="btn-admin-view" onclick="switchView('admin')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow">
+                    <i class="fa-solid fa-user-tie mr-1.5"></i>Διαχειριστής
+                </button>
+                <button id="btn-staff-view" onclick="switchView('staff')" class="px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 text-indigo-300 hover:text-white">
+                    <i class="fa-solid fa-users mr-1.5"></i>Προσωπικό
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        
+        <!-- ==================== ADMIN PANEL VIEW ==================== -->
+        <div id="admin-panel" class="space-y-6">
+            
+            <!-- Grid 2 Στηλών: Διαχείριση Προσωπικού & Ρυθμίσεις -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 no-print">
+                
+                <!-- Στήλη 1: Προσθήκη / Επεξεργασία Εργαζομένου -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 id="form-title" class="text-base font-bold text-slate-900 flex items-center">
+                            <i class="fa-solid fa-user-plus text-indigo-600 mr-2"></i>Προσθήκη Εργαζομένου
+                        </h2>
+                        <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden text-xs text-red-600 hover:underline font-medium">Ακύρωση Αλλαγής</button>
+                    </div>
+                    
+                    <form id="employee-form" onsubmit="handleEmployeeSubmit(event)" class="space-y-3.5">
+                        <input type="hidden" id="edit-emp-id">
+                        
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ονοματεπώνυμο</label>
+                            <input type="text" id="emp-name" required placeholder="π.χ. Νίκος Παπαδόπουλος" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ειδικότητα</label>
+                                <select id="emp-role" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                    <option value="Αντλία">Αντλία</option>
+                                    <option value="Καφέ">Καφέ</option>
+                                    <option value="Βοηθός Διαχειριστή">Βοηθός Διαχειριστή</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ημέρες Εργασίας</label>
+                                <select id="emp-contract" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 font-bold text-indigo-600 focus:outline-none">
+                                    <option value="6">6 ημέρες</option>
+                                    <option value="5" selected>5 ημέρες</option>
+                                    <option value="4">4 ημέρες</option>
+                                    <option value="3">3 ημέρες</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Προτίμηση Βάρδιας</label>
+                                <select id="emp-shift-pref" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none">
+                                    <option value="Ελεύθερο">Ελεύθερο (Όλες)</option>
+                                    <option value="Μόνο Πρωί">Μόνο Πρωί</option>
+                                    <option value="Μόνο Απόγευμα">Μόνο Απόγευμα</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Στάνταρ Ρεπό</label>
+                                <select id="emp-fixed-off" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none">
+                                    <option value="Κανένα">Κανένα</option>
+                                    <option value="Δευτέρα">Δευτέρα</option>
+                                    <option value="Τρίτη">Τρίτη</option>
+                                    <option value="Τετάρτη">Τετάρτη</option>
+                                    <option value="Πέμπτη">Πέμπτη</option>
+                                    <option value="Παρασκευή">Παρασκευή</option>
+                                    <option value="Σάββατο">Σάββατο</option>
+                                    <option value="Κυριακή">Κυριακή</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Εργασία Σαββατοκύριακου</label>
+                            <select id="emp-weekend-rule" class="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none">
+                                <option value="Κάθε">Κάθε Σαββατοκύριακο</option>
+                                <option value="2_στα_4">2 στα 4 Σαββατοκύριακα / Μήνα</option>
+                                <option value="Ποτέ">Ποτέ (Πάντα Ρεπό)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" id="btn-submit-emp" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-plus text-xs"></i> Αποθήκευση Εργαζομένου
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Στήλη 2: Λίστα Προσωπικού & Συμφωνιών -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[380px]">
+                    <h3 class="text-base font-bold text-slate-900 mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-users text-slate-600 mr-1.5"></i>Η Ομάδα μου</span>
+                        <span id="badge-total-emp" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">0</span>
+                    </h3>
+                    <div class="flex-grow overflow-y-auto space-y-2 pr-1" id="employees-list">
+                        <!-- Dynamic Employees -->
+                    </div>
+                </div>
+
+                <!-- Στήλη 3: Επιλογή Εποχιακών Βαρδιών & Αιτήματα Ρεπό -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-[380px]">
+                    <h3 class="text-base font-bold text-slate-900 mb-3"><i class="fa-solid fa-sliders text-indigo-600 mr-1.5"></i>Εποχιακές Βάρδιες</h3>
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
+                            <input type="checkbox" id="shift-opt-split" onchange="toggleShiftOption('Split')" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-xs font-semibold text-slate-700">Σπαστή (Σ)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 cursor-pointer hover:bg-slate-100/50">
+                            <input type="checkbox" id="shift-opt-mid" onchange="toggleShiftOption('Mid')" class="w-4 h-4 text-indigo-600 rounded">
+                            <span class="text-xs font-semibold text-slate-700">Ενδιάμεση (Ε)</span>
+                        </label>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-slate-900 mb-2 border-t border-slate-100 pt-3 flex justify-between">
+                        <span><i class="fa-solid fa-envelope-open-text text-amber-500 mr-1.5"></i>Αιτήματα Ρεπό</span>
+                        <span id="badge-pending-count" class="text-xs text-amber-600 font-semibold bg-amber-50 px-2 rounded-full">0 εκκρεμή</span>
+                    </h3>
+                    <div class="flex-grow overflow-y-auto divide-y divide-slate-100 pr-1" id="admin-requests-list">
+                        <!-- Dynamic Requests -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ΚΥΡΙΟ ΠΛΑΝΟ ΠΡΟΓΡΑΜΜΑΤΟΣ -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 print-card">
+                
+                <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6 pb-4 border-b border-slate-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-alt text-indigo-600"></i>Πλάνο Προγράμματος
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5 no-print">Κάντε κλικ σε κάθε κελί για να αλλάξετε χειροκίνητα τη βάρδια.</p>
+                    </div>
+                    
+                    <!-- CONTROL BAR (no-print) -->
+                    <div class="flex flex-wrap items-center gap-3 w-full xl:w-auto no-print">
+                        <!-- Επιλογή Εύρους -->
+                        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <span class="text-xs font-semibold text-slate-500 px-2">Ορίζοντας:</span>
+                            <select id="schedule-range" onchange="changeRange()" class="bg-white text-xs font-bold text-slate-800 rounded-lg px-2 py-1.5 focus:outline-none border-0 shadow-sm cursor-pointer">
+                                <option value="1">1 Εβδομάδα</option>
+                                <option value="4">1 Μήνας (4 Εβδ.)</option>
+                                <option value="12">1 Τρίμηνο (12 Εβδ.)</option>
+                                <option value="24">1 Εξάμηνο (24 Εβδ.)</option>
+                                <option value="52">1 Έτος (52 Εβδ.)</option>
+                            </select>
+                        </div>
+
+                        <!-- THE LOTTERY BUTTON -->
+                        <button onclick="runLottery()" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-1.5">
+                            <i class="fa-solid fa-dice text-sm animate-bounce"></i>
+                            <span>Αυτόματη Λοταρία (Ζάρια)</span>
+                        </button>
+                        
+                        <button onclick="clearPlanner()" class="px-3 py-2 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-semibold transition-colors">
+                            <i class="fa-solid fa-trash-can mr-1"></i>Καθαρισμός
+                        </button>
+                        
+                        <button onclick="window.print()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1">
+                            <i class="fa-solid fa-print"></i> Εκτύπωση
+                        </button>
+                    </div>
+                </div>
+
+                <!-- WEEK NAVIGATION TABS (για μεγάλο ορίζοντα) -->
+                <div class="flex items-center space-x-2 overflow-x-auto pb-4 mb-4 border-b border-slate-100 scrollbar-thin no-print" id="weeks-tab-container">
+                    <!-- Dynamic Week Tabs -->
+                </div>
+
+                <!-- Υπόμνημα -->
+                <div class="flex flex-wrap items-center gap-4 mb-4 text-[11px] bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <span class="font-semibold text-slate-600">Υπόμνημα:</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-50 border border-amber-200 block"></span> <i class="fa-solid fa-lock text-[8px] text-amber-500"></i> Εγκεκριμένο Ρεπό</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-emerald-50 border border-emerald-200 block"></span> <i class="fa-solid fa-circle-check text-[8px] text-emerald-500"></i> Στάνταρ Ρεπό</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-100 border border-blue-200 block"></span> Πρωί (Π)</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-purple-100 border border-purple-200 block"></span> Απόγευμα (Α)</span>
+                    <span id="legend-split" class="hidden flex items-center gap-1"><span class="w-3 h-3 rounded bg-rose-100 border border-rose-200 block"></span> Σπαστό (Σ)</span>
+                    <span id="legend-mid" class="hidden flex items-center gap-1"><span class="w-3 h-3 rounded bg-amber-100 border border-amber-200 block"></span> Ενδιάμεση (Ε)</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-slate-100 border border-slate-200 block"></span> Ρεπό (Ρ)</span>
+                </div>
+
+                <!-- Schedule Grid -->
+                <div class="overflow-x-auto rounded-xl border border-slate-200" id="schedule-print-zone">
+                    <table class="w-full min-w-[850px] border-collapse text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase tracking-wider text-xs">
+                            <tr>
+                                <th class="py-3 px-4 font-bold w-1/4">Εργαζόμενος & Συμφωνία</th>
+                                <th class="py-3 px-3 font-bold text-center">Δευτέρα</th>
+                                <th class="py-3 px-3 font-bold text-center">Τρίτη</th>
+                                <th class="py-3 px-3 font-bold text-center">Τετάρτη</th>
+                                <th class="py-3 px-3 font-bold text-center">Πέμπτη</th>
+                                <th class="py-3 px-3 font-bold text-center">Παρασκευή</th>
+                                <th class="py-3 px-3 font-bold text-center text-indigo-700 bg-indigo-50/30">Σάββατο</th>
+                                <th class="py-3 px-3 font-bold text-center text-indigo-700 bg-indigo-50/30">Κυριακή</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="planner-table-rows">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- ==================== EMPLOYEE / STAFF VIEW ==================== -->
+        <div id="staff-panel" class="hidden space-y-6">
+            
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-indigo-900">Πύλη Προσωπικού (Employee Portal)</h2>
+                    <p class="text-sm text-indigo-700 mt-1">
+                        Οι εργαζόμενοι μπορούν να στείλουν γρήγορα τα αιτήματα για τα ρεπό τους, τα οποία εμφανίζονται αυτόματα στον διαχειριστή.
+                    </p>
+                </div>
+                <div class="bg-white px-4 py-2 rounded-xl shadow-sm border border-indigo-100 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-semibold text-slate-600">Live Σύνδεση</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Request -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                        <i class="fa-solid fa-paper-plane text-indigo-600 mr-2"></i>Αίτημα για Ρεπό
+                    </h3>
+                    <form id="request-leave-form" onsubmit="handleRequestLeave(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Ποιος είστε;</label>
+                            <select id="request-emp-select" required class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
+                                <!-- Dynamic Options -->
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Εβδομάδα</label>
+                                <select id="request-week" required class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
+                                    <option value="1">1η Εβδομάδα</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Ημέρα</label>
+                                <select id="request-day" required class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50">
+                                    <option value="Δευτέρα">Δευτέρα</option>
+                                    <option value="Τρίτη">Τρίτη</option>
+                                    <option value="Τετάρτη">Τετάρτη</option>
+                                    <option value="Πέμπτη">Πέμπτη</option>
+                                    <option value="Παρασκευή">Παρασκευή</option>
+                                    <option value="Σάββατο">Σάββατο</option>
+                                    <option value="Κυριακή">Κυριακή</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Αιτιολογία</label>
+                            <textarea id="request-reason" rows="3" placeholder="π.χ. Προσωπικό ραντεβού..." class="w-full px-4 py-2 border border-slate-200 rounded-lg text-sm bg-slate-50"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-paper-plane text-xs"></i> Υποβολή Αίτηματος
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Live Request Status Board -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center">
+                        <i class="fa-solid fa-list-check text-slate-700 mr-2"></i>Ιστορικό & Κατάσταση Αιτημάτων
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[500px] text-left text-sm text-slate-600">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase text-xs tracking-wider">
+                                <tr>
+                                    <th class="py-3 px-4 font-semibold">Εργαζόμενος</th>
+                                    <th class="py-3 px-4 font-semibold">Εβδομάδα / Ημέρα</th>
+                                    <th class="py-3 px-4 font-semibold">Αιτιολογία</th>
+                                    <th class="py-3 px-4 font-semibold text-center">Κατάσταση</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100" id="staff-requests-table">
+                                <!-- Dynamic Requests -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW ACTIVE WEEKLY SCHEDULE (READ-ONLY FOR STAFF) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900">Δημοσιευμένο Πρόγραμμα</h3>
+                        <p class="text-xs text-slate-500">Προβολή τρέχοντος προγράμματος.</p>
+                    </div>
+                    <div id="staff-week-indicator" class="text-sm font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-lg">
+                        1η Εβδομάδα
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
+                    <table class="w-full min-w-[850px] border-collapse text-left text-sm text-slate-600">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 uppercase tracking-wider text-xs">
+                            <tr>
+                                <th class="py-3.5 px-4 font-bold w-1/4">Εργαζόμενος</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Δευτέρα</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Τρίτη</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Τετάρτη</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Πέμπτη</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Παρασκευή</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Σάββατο</th>
+                                <th class="py-3.5 px-3 font-bold text-center">Κυριακή</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200" id="staff-read-planner-rows">
+                            <!-- Dynamic Read-Only Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Global Notification Toast -->
+    <div id="custom-toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <span id="toast-icon" class="text-emerald-400 text-lg"><i class="fa-solid fa-circle-check"></i></span>
+        <span id="toast-message" class="text-sm font-medium"></span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-400 no-print">
+        <p>&copy; 2026 ShiftMaster Pro. Όλα τα δικαιώματα κατοχυρωμένα.</p>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        // Clean database with NO mockup data on initial load
+        let employees = [];
+        let requests = [];
+
+        // App Configurations
+        let activeShiftConfig = {
+            Morning: true,
+            Evening: true,
+            Split: false,
+            Mid: false
+        };
+
+        let currentActiveWeek = 1; // 1-indexed
+        let scheduleHorizonWeeks = 1; // Default: 1 Week
+
+        // Schedule State Structure: { [weekNumber]: { [employeeId]: { [day]: shift } } }
+        let schedule = {};
+
+        const daysOfWeek = ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή'];
+
+        // Core Functions
+        function switchView(view) {
+            const adminBtn = document.getElementById('btn-admin-view');
+            const staffBtn = document.getElementById('btn-staff-view');
+            const adminPanel = document.getElementById('admin-panel');
+            const staffPanel = document.getElementById('staff-panel');
+
+            if (view === 'admin') {
+                adminBtn.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow";
+                staffBtn.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 text-indigo-300 hover:text-white";
+                adminPanel.classList.remove('hidden');
+                staffPanel.classList.add('hidden');
+                showToast("Μετάβαση σε: Διαχειριστής");
+            } else {
+                staffBtn.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 bg-indigo-600 text-white shadow";
+                adminBtn.className = "px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 text-indigo-300 hover:text-white";
+                staffPanel.classList.remove('hidden');
+                adminPanel.classList.add('hidden');
+                showToast("Μετάβαση σε: Πύλη Προσωπικού");
+            }
+            renderAll();
+        }
+
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('custom-toast');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-message');
+
+            msg.textContent = message;
+            if (isSuccess) {
+                icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+            } else {
+                icon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-400"></i>';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        function changeRange() {
+            scheduleHorizonWeeks = parseInt(document.getElementById('schedule-range').value);
+            currentActiveWeek = 1; // reset view to week 1
+            initScheduleStructure();
+            renderAll();
+            showToast(`Ο ορίζοντας προγράμματος άλλαξε σε ${scheduleHorizonWeeks} εβδομάδες.`);
+        }
+
+        // Initialize empty cells for all weeks and employees in state
+        function initScheduleStructure() {
+            for (let w = 1; w <= scheduleHorizonWeeks; w++) {
+                if (!schedule[w]) schedule[w] = {};
+                employees.forEach(emp => {
+                    if (!schedule[w][emp.id]) {
+                        schedule[w][emp.id] = {};
+                        daysOfWeek.forEach(d => {
+                            // Set standard day off on initialization
+                            schedule[w][emp.id][d] = (emp.fixedDayOff === d) ? 'Off' : '';
+                        });
+                    }
+                });
+            }
+            // Sync Approved requests
+            requests.forEach(req => {
+                const w = req.week || 1;
+                if (req.status === 'approved' && schedule[w] && schedule[w][req.employeeId]) {
+                    schedule[w][req.employeeId][req.day] = 'Off';
+                }
+            });
+        }
+
+        function toggleShiftOption(shiftType) {
+            activeShiftConfig[shiftType] = document.getElementById(`shift-opt-${shiftType.toLowerCase()}`).checked;
+            
+            // Show/Hide legend info
+            const splitLegend = document.getElementById('legend-split');
+            const midLegend = document.getElementById('legend-mid');
+            if (activeShiftConfig.Split) splitLegend.classList.remove('hidden'); else splitLegend.classList.add('hidden');
+            if (activeShiftConfig.Mid) midLegend.classList.remove('hidden'); else midLegend.classList.add('hidden');
+
+            showToast("Η διαθεσιμότητα των βαρδιών ενημερώθηκε!");
+            renderPlanner();
+        }
+
+        // Add OR Edit Employee Submission
+        function handleEmployeeSubmit(e) {
+            e.preventDefault();
+            const editId = document.getElementById('edit-emp-id').value;
+            const name = document.getElementById('emp-name').value;
+            const role = document.getElementById('emp-role').value;
+            const contract = parseInt(document.getElementById('emp-contract').value);
+            const shiftPref = document.getElementById('emp-shift-pref').value;
+            const fixedOff = document.getElementById('emp-fixed-off').value;
+            const weekendRule = document.getElementById('emp-weekend-rule').value;
+
+            if (editId) {
+                // Update Existing
+                const empIndex = employees.findIndex(emp => emp.id === editId);
+                if (empIndex !== -1) {
+                    employees[empIndex] = { id: editId, name, role, contractDays: contract, shiftPreference: shiftPref, fixedDayOff: fixedOff, weekendRule };
+                    showToast(`Οι ρυθμίσεις του/της ${name} ενημερώθηκαν!`);
+                }
+                cancelEdit();
+            } else {
+                // Create New
+                const newId = 'emp-' + Date.now();
+                const newEmp = { id: newId, name, role, contractDays: contract, shiftPreference: shiftPref, fixedDayOff: fixedOff, weekendRule };
+                employees.push(newEmp);
+                showToast(`Ο/Η ${name} προστέθηκε στην ομάδα!`);
+                
+                // Clear Form
+                document.getElementById('emp-name').value = '';
+            }
+
+            initScheduleStructure();
+            renderAll();
+        }
+
+        // Edit Mode Trigger
+        function editEmployee(id) {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) return;
+
+            document.getElementById('edit-emp-id').value = emp.id;
+            document.getElementById('emp-name').value = emp.name;
+            document.getElementById('emp-role').value = emp.role;
+            document.getElementById('emp-contract').value = emp.contractDays;
+            document.getElementById('emp-shift-pref').value = emp.shiftPreference || 'Ελεύθερο';
+            document.getElementById('emp-fixed-off').value = emp.fixedDayOff || 'Κανένα';
+            document.getElementById('emp-weekend-rule').value = emp.weekendRule || 'Κάθε';
+
+            // UI adjustments
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-user-gear text-indigo-600 mr-2"></i>Επεξεργασία Συμφωνίας`;
+            document.getElementById('btn-submit-emp').innerHTML = `<i class="fa-solid fa-check text-xs"></i> Αποθήκευση Αλλαγών`;
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        }
+
+        function cancelEdit() {
+            document.getElementById('edit-emp-id').value = '';
+            document.getElementById('emp-name').value = '';
+            document.getElementById('emp-role').value = 'Αντλία';
+            document.getElementById('emp-contract').value = '5';
+            document.getElementById('emp-shift-pref').value = 'Ελεύθερο';
+            document.getElementById('emp-fixed-off').value = 'Κανένα';
+            document.getElementById('emp-weekend-rule').value = 'Κάθε';
+
+            document.getElementById('form-title').innerHTML = `<i class="fa-solid fa-user-plus text-indigo-600 mr-2"></i>Προσθήκη Εργαζομένου`;
+            document.getElementById('btn-submit-emp').innerHTML = `<i class="fa-solid fa-plus text-xs"></i> Αποθήκευση Εργαζομένου`;
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        function deleteEmployee(id) {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) return;
+
+            if (confirm(`Είστε σίγουροι ότι θέλετε να διαγράψετε τον εργαζόμενο ${emp.name};`)) {
+                employees = employees.filter(e => e.id !== id);
+                // remove from schedule
+                for (let w in schedule) {
+                    delete schedule[w][id];
+                }
+                showToast(`Ο/Η ${emp.name} διαγράφηκε.`);
+                renderAll();
+            }
+        }
+
+        // Handlers for Leave Requests
+        function handleRequestLeave(e) {
+            e.preventDefault();
+            const empId = document.getElementById('request-emp-select').value;
+            const week = parseInt(document.getElementById('request-week').value);
+            const day = document.getElementById('request-day').value;
+            const reason = document.getElementById('request-reason').value;
+
+            if (!empId) {
+                showToast("Επιλέξτε όνομα εργαζομένου!", false);
+                return;
+            }
+
+            const exists = requests.some(r => r.employeeId === empId && r.day === day && r.week === week);
+            if (exists) {
+                showToast("Έχει υποβληθεί ήδη αίτημα για αυτή την ημέρα!", false);
+                return;
+            }
+
+            const newReq = {
+                id: `req-${Date.now()}`,
+                employeeId: empId,
+                week,
+                day,
+                reason,
+                status: 'pending'
+            };
+
+            requests.push(newReq);
+            document.getElementById('request-reason').value = '';
+            showToast("Το αίτημα υποβλήθηκε επιτυχώς!");
+            renderAll();
+        }
+
+        function approveRequest(reqId) {
+            const req = requests.find(r => r.id === reqId);
+            if (req) {
+                req.status = 'approved';
+                const w = req.week || 1;
+                if (schedule[w] && schedule[w][req.employeeId]) {
+                    schedule[w][req.employeeId][req.day] = 'Off';
+                }
+                showToast("Το ρεπό εγκρίθηκε και κλειδώθηκε στο πρόγραμμα!");
+                renderAll();
+            }
+        }
+
+        function declineRequest(reqId) {
+            const req = requests.find(r => r.id === reqId);
+            if (req) {
+                req.status = 'rejected';
+                const w = req.week || 1;
+                if (schedule[w] && schedule[w][req.employeeId] && schedule[w][req.employeeId][req.day] === 'Off') {
+                    const emp = employees.find(e => e.id === req.employeeId);
+                    if (emp && emp.fixedDayOff !== req.day) {
+                        schedule[w][req.employeeId][req.day] = '';
+                    }
+                }
+                showToast("Το αίτημα απορρίφθηκε.");
+                renderAll();
+            }
+        }
+
+        // Cycle through shifts on grid manually
+        function cycleShift(empId, day) {
+            const currentShift = schedule[currentActiveWeek][empId][day];
+            
+            let rotationPool = ['']; // empty
+            if (activeShiftConfig.Morning) rotationPool.push('Morning');
+            if (activeShiftConfig.Evening) rotationPool.push('Evening');
+            if (activeShiftConfig.Split) rotationPool.push('Split');
+            if (activeShiftConfig.Mid) rotationPool.push('Mid');
+            rotationPool.push('Off');
+
+            let currentIndex = rotationPool.indexOf(currentShift);
+            if (currentIndex === -1) currentIndex = 0;
+
+            let nextIndex = (currentIndex + 1) % rotationPool.length;
+            schedule[currentActiveWeek][empId][day] = rotationPool[nextIndex];
+            renderAll();
+        }
+
+        function clearPlanner() {
+            employees.forEach(emp => {
+                daysOfWeek.forEach(day => {
+                    const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === currentActiveWeek && r.status === 'approved');
+                    const isFixedOff = emp.fixedDayOff === day;
+
+                    if (hasApprovedReq || isFixedOff) {
+                        schedule[currentActiveWeek][emp.id][day] = 'Off';
+                    } else {
+                        schedule[currentActiveWeek][emp.id][day] = '';
+                    }
+                });
+            });
+            showToast("Το πρόγραμμα της τρέχουσας εβδομάδας καθαρίστηκε.");
+            renderAll();
+        }
+
+        // Utility: Shuffle
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // ==================== LOTTERY ALGORITHM WITH ADVANCED RULES ====================
+        function runLottery() {
+            if (employees.length === 0) {
+                showToast("Προσθέστε πρώτα προσωπικό για να ξεκινήσει η λοταρία!", false);
+                return;
+            }
+
+            // Loop and calculate for EACH week in the active range!
+            for (let w = 1; w <= scheduleHorizonWeeks; w++) {
+                
+                // Track daily assignment loads to ensure we distribute evenly
+                let dailyCounts = {
+                    'Αντλία': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 },
+                    'Καφέ': { 'Δευτέρα': 0, 'Τρίτη': 0, 'Τετάρτη': 0, 'Πέμπτη': 0, 'Παρασκευή': 0, 'Σάββατο': 0, 'Κυριακή': 0 }
+                };
+
+                // Track who can be a wildcard (Assistant Manager)
+                let assistants = employees.filter(e => e.role === 'Βοηθός Διαχειριστή');
+                let coreStaff = employees.filter(e => e.role !== 'Βοηθός Διαχειριστή');
+
+                // Shuffle employees list to have fair rotation order
+                let shuffledCore = shuffle([...coreStaff]);
+                let shuffledAssistants = shuffle([...assistants]);
+                let finalOrder = [...shuffledCore, ...shuffledAssistants];
+
+                finalOrder.forEach(emp => {
+                    const targetWorkDays = emp.contractDays;
+                    const totalOffDaysNeeded = 7 - targetWorkDays;
+
+                    let currentEmployeeSchedule = {};
+                    let designatedOffsCount = 0;
+
+                    // 1. Core Guaranteed Off Days
+                    daysOfWeek.forEach(day => {
+                        const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === w && r.status === 'approved');
+                        const isFixedOff = emp.fixedDayOff === day;
+
+                        // Weekend Rule constraints: "2_στα_4" has a 50% random chance to be locked off this week
+                        let lockedWeekendOff = false;
+                        if (emp.weekendRule === '2_στα_4' && (day === 'Σάββατο' || day === 'Κυριακή')) {
+                            // Pseudo-random selection based on week number so it fluctuates
+                            const seed = (parseInt(emp.id.replace(/\D/g, '')) || 1) + w;
+                            if (seed % 2 === 0) {
+                                lockedWeekendOff = true;
+                            }
+                        }
+                        if (emp.weekendRule === 'Ποτέ' && (day === 'Σάββατο' || day === 'Κυριακή')) {
+                            lockedWeekendOff = true;
+                        }
+
+                        if (hasApprovedReq || isFixedOff || lockedWeekendOff) {
+                            currentEmployeeSchedule[day] = 'Off';
+                            designatedOffsCount++;
+                        } else {
+                            currentEmployeeSchedule[day] = '';
+                        }
+                    });
+
+                    // 2. Extra Off day generation (if contract days requires more Offs)
+                    let remainingEmptyDays = daysOfWeek.filter(day => currentEmployeeSchedule[day] === '');
+                    let extraOffsNeeded = Math.max(0, totalOffDaysNeeded - designatedOffsCount);
+
+                    shuffle(remainingEmptyDays);
+                    for (let i = 0; i < Math.min(extraOffsNeeded, remainingEmptyDays.length); i++) {
+                        const chosenDay = remainingEmptyDays[i];
+                        currentEmployeeSchedule[chosenDay] = 'Off';
+                    }
+
+                    // 3. Assign Work Shifts for unassigned days
+                    const finalWorkDays = daysOfWeek.filter(day => currentEmployeeSchedule[day] === '');
+                    
+                    finalWorkDays.forEach(day => {
+                        // Gather potential shifts based on employee preferences
+                        let possibleShifts = [];
+                        if (emp.shiftPreference === 'Μόνο Πρωί') {
+                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                        } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
+                            if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                        } else {
+                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                            if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                            if (activeShiftConfig.Split) possibleShifts.push('Split');
+                            if (activeShiftConfig.Mid) possibleShifts.push('Mid');
+                        }
+
+                        if (possibleShifts.length === 0) {
+                            // Fallback if preferences clash with disabled shifts
+                            if (activeShiftConfig.Morning) possibleShifts.push('Morning');
+                            else if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                        }
+
+                        // Determine role assignment
+                        let targetRole = emp.role;
+                        if (emp.role === 'Βοηθός Διαχειριστή') {
+                            // Check if Pump (Αντλία) shifts are low on this day (e.g. less than 1 cover)
+                            if (dailyCounts['Αντλία'][day] < 1) {
+                                targetRole = 'Αντλία'; // Helper wildcard mode!
+                            }
+                        }
+
+                        // Assign random valid shift and record statistics
+                        const chosenShift = possibleShifts[Math.floor(Math.random() * possibleShifts.length)];
+                        currentEmployeeSchedule[day] = chosenShift;
+
+                        // Increment tracking stats
+                        if (dailyCounts[targetRole]) {
+                            dailyCounts[targetRole][day]++;
+                        }
+                    });
+
+                    // Save to State
+                    schedule[w][emp.id] = currentEmployeeSchedule;
+                });
+            }
+
+            showToast("Η λοταρία ολοκληρώθηκε για όλες τις εβδομάδες!");
+            renderAll();
+        }
+
+        // RENDER PIPELINES
+        function renderAll() {
+            initScheduleStructure();
+            renderStats();
+            renderEmployeeList();
+            renderAdminRequests();
+            renderWeeksTabs();
+            renderPlanner();
+            renderStaffForm();
+        }
+
+        function renderStats() {
+            document.getElementById('badge-total-emp').textContent = employees.length;
+            const pending = requests.filter(r => r.status === 'pending').length;
+            document.getElementById('badge-pending-count').textContent = `${pending} εκκρεμή`;
+        }
+
+        function renderEmployeeList() {
+            const container = document.getElementById('employees-list');
+            container.innerHTML = '';
+
+            if (employees.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 text-slate-400">
+                        <i class="fa-solid fa-users-slash text-3xl mb-2 text-slate-200"></i>
+                        <p class="text-xs font-semibold">Κανένας εργαζόμενος ακόμη.</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Χρησιμοποιήστε την αριστερή φόρμα για να προσθέσετε άτομα.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            employees.forEach(emp => {
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-150 rounded-xl border border-slate-200/50 transition-colors";
+                
+                let preferenceBadge = "";
+                if (emp.shiftPreference !== 'Ελεύθερο') {
+                    preferenceBadge = `<span class="text-[9px] bg-amber-50 text-amber-800 px-1.5 py-0.5 rounded font-bold">${emp.shiftPreference}</span>`;
+                }
+
+                let weekendBadge = "";
+                if (emp.weekendRule === '2_στα_4') {
+                    weekendBadge = `<span class="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded font-bold">2/4 ΣΚ</span>`;
+                } else if (emp.weekendRule === 'Ποτέ') {
+                    weekendBadge = `<span class="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-bold">Όχι ΣΚ</span>`;
+                }
+
+                div.innerHTML = `
+                    <div class="flex items-center space-x-2 w-3/4">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                            ${emp.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${emp.name}</p>
+                            <div class="flex flex-wrap gap-1 mt-0.5">
+                                <span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">${emp.role}</span>
+                                <span class="text-[9px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded font-bold">${emp.contractDays}ήμερος</span>
+                                ${emp.fixedDayOff !== 'Κανένα' ? `<span class="text-[9px] bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Ρ: ${emp.fixedDayOff.substring(0,3)}</span>` : ''}
+                                ${preferenceBadge}
+                                ${weekendBadge}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="editEmployee('${emp.id}')" class="text-slate-400 hover:text-indigo-600 p-1 rounded transition-colors" title="Επεξεργασία Συμφωνίας">
+                            <i class="fa-solid fa-user-pen text-sm"></i>
+                        </button>
+                        <button onclick="deleteEmployee('${emp.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition-colors" title="Διαγραφή">
+                            <i class="fa-solid fa-user-xmark text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderAdminRequests() {
+            const container = document.getElementById('admin-requests-list');
+            container.innerHTML = '';
+
+            const pending = requests.filter(r => r.status === 'pending');
+
+            if (pending.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 italic text-center py-6">Δεν υπάρχουν εκκρεμή αιτήματα.</p>';
+                return;
+            }
+
+            pending.forEach(req => {
+                const emp = employees.find(e => e.id === req.employeeId);
+                if (!emp) return;
+
+                const div = document.createElement('div');
+                div.className = "py-2.5 flex justify-between items-center gap-2";
+                div.innerHTML = `
+                    <div class="text-xs space-y-0.5">
+                        <div class="font-bold text-slate-800">${emp.name}</div>
+                        <div class="text-indigo-600 font-semibold text-[10px]"><i class="fa-solid fa-calendar-alt"></i> Εβδ. ${req.week} - ${req.day}</div>
+                        ${req.reason ? `<p class="text-[10px] text-slate-500 italic">"${req.reason}"</p>` : ''}
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="declineRequest('${req.id}')" class="p-1 text-red-600 hover:bg-red-50 rounded" title="Απόρριψη"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="approveRequest('${req.id}')" class="p-1 text-emerald-600 hover:bg-emerald-50 rounded" title="Έγκριση"><i class="fa-solid fa-check"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Render Navigation tabs for multiple weeks view
+        function renderWeeksTabs() {
+            const container = document.getElementById('weeks-tab-container');
+            container.innerHTML = '';
+
+            for (let w = 1; w <= scheduleHorizonWeeks; w++) {
+                const isActive = w === currentActiveWeek;
+                const button = document.createElement('button');
+                
+                button.className = `px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1 ${
+                    isActive 
+                    ? 'bg-indigo-600 text-white shadow-sm' 
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`;
+                button.innerHTML = `<i class="fa-solid fa-calendar-week"></i> ${w}η Εβδομάδα`;
+                button.onclick = () => {
+                    currentActiveWeek = w;
+                    renderAll();
+                };
+                container.appendChild(button);
+            }
+        }
+
+        function renderPlanner() {
+            const plannerRows = document.getElementById('planner-table-rows');
+            const staffRows = document.getElementById('staff-read-planner-rows');
+            
+            plannerRows.innerHTML = '';
+            staffRows.innerHTML = '';
+
+            if (employees.length === 0) {
+                const emptyRow = `<tr><td colspan="8" class="text-center py-12 text-slate-400 italic">Προσθέστε το προσωπικό της επιχείρησής σας για να ξεκινήσετε.</td></tr>`;
+                plannerRows.innerHTML = emptyRow;
+                staffRows.innerHTML = emptyRow;
+                return;
+            }
+
+            employees.forEach(emp => {
+                // 1. Admin Row (Interactive)
+                const trAdmin = document.createElement('tr');
+                trAdmin.className = "hover:bg-slate-50/50 transition-colors";
+                
+                let adminCellsHTML = `
+                    <td class="py-3 px-4 border-r border-slate-200">
+                        <div class="font-bold text-xs sm:text-sm text-slate-800">${emp.name}</div>
+                        <div class="flex flex-wrap gap-1 mt-1 text-[9px]">
+                            <span class="bg-indigo-50 text-indigo-700 px-1 rounded font-bold">${emp.role}</span>
+                            <span class="bg-slate-100 text-slate-600 px-1 rounded font-medium">${emp.contractDays} Ημ.</span>
+                        </div>
+                    </td>
+                `;
+
+                // 2. Staff Row (Read Only)
+                const trStaff = document.createElement('tr');
+                trStaff.className = "hover:bg-slate-50 transition-colors";
+                
+                let staffCellsHTML = `
+                    <td class="py-3 px-4 border-r border-slate-200">
+                        <div class="font-bold text-xs sm:text-sm text-slate-800">${emp.name}</div>
+                        <span class="text-[9px] bg-slate-100 text-slate-600 px-1 rounded font-bold">${emp.role}</span>
+                    </td>
+                `;
+
+                daysOfWeek.forEach(day => {
+                    const shift = schedule[currentActiveWeek]?.[emp.id]?.[day] || '';
+                    const hasApprovedReq = requests.some(r => r.employeeId === emp.id && r.day === day && r.week === currentActiveWeek && r.status === 'approved');
+                    const isFixedOff = emp.fixedDayOff === day;
+
+                    let cellStyle = "bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-700";
+                    let shiftText = "-";
+                    let icon = "";
+
+                    if (hasApprovedReq) {
+                        cellStyle = "bg-amber-50 text-amber-800 border border-amber-200/50 font-bold";
+                        shiftText = "ΡΕΠΟ (Εγκρ.)";
+                        icon = '<i class="fa-solid fa-lock text-[9px] mr-1 text-amber-500"></i>';
+                    } else if (isFixedOff && shift === 'Off') {
+                        cellStyle = "bg-emerald-50 text-emerald-800 border border-emerald-200/50 font-bold";
+                        shiftText = "ΣΤΑΝΤΑΡ ΡΕΠΟ";
+                        icon = '<i class="fa-solid fa-circle-check text-[9px] mr-1 text-emerald-500"></i>';
+                    } else if (shift === 'Off') {
+                        cellStyle = "bg-slate-100 text-slate-700 border border-slate-200/40 font-semibold";
+                        shiftText = "ΡΕΠΟ";
+                    } else if (shift === 'Morning') {
+                        cellStyle = "bg-blue-50 text-blue-800 border border-blue-200/60 font-bold";
+                        shiftText = "ΠΡΩΙ (Π)";
+                        icon = '<i class="fa-solid fa-sun text-xs mr-1 text-blue-500"></i>';
+                    } else if (shift === 'Evening') {
+                        cellStyle = "bg-purple-50 text-purple-800 border border-purple-200/60 font-bold";
+                        shiftText = "ΑΠΟΓΕΥΜΑ (Α)";
+                        icon = '<i class="fa-solid fa-moon text-xs mr-1 text-purple-500"></i>';
+                    } else if (shift === 'Split') {
+                        cellStyle = "bg-rose-50 text-rose-800 border border-rose-200/60 font-bold";
+                        shiftText = "ΣΠΑΣΤΟ (Σ)";
+                        icon = '<i class="fa-solid fa-clock-rotate-left text-xs mr-1 text-rose-500"></i>';
+                    } else if (shift === 'Mid') {
+                        cellStyle = "bg-amber-100/50 text-amber-900 border border-amber-200/60 font-bold";
+                        shiftText = "ΕΝΔΙΑΜΕΣΟ (Ε)";
+                        icon = '<i class="fa-solid fa-cloud-sun text-xs mr-1 text-amber-600"></i>';
+                    }
+
+                    const onclickAttr = hasApprovedReq ? "" : `onclick="cycleShift('${emp.id}', '${day}')"`;
+                    const pointerStyle = hasApprovedReq ? "cursor-not-allowed" : "cursor-pointer";
+
+                    adminCellsHTML += `
+                        <td class="p-2 border-r border-slate-100 text-center ${pointerStyle} ${cellStyle} select-none transition-all duration-150" ${onclickAttr}>
+                            <div class="flex items-center justify-center text-[11px] h-9">
+                                ${icon} ${shiftText}
+                            </div>
+                        </td>
+                    `;
+
+                    staffCellsHTML += `
+                        <td class="p-2 border-r border-slate-100 text-center ${cellStyle} transition-all duration-150">
+                            <div class="flex items-center justify-center text-[11px] h-9">
+                                ${icon} ${shiftText}
+                            </div>
+                        </td>
+                    `;
+                });
+
+                trAdmin.innerHTML = adminCellsHTML;
+                trStaff.innerHTML = staffCellsHTML;
+
+                plannerRows.appendChild(trAdmin);
+                staffRows.appendChild(trStaff);
+            });
+        }
+
+        // Generate staff submission selections
+        function renderStaffForm() {
+            const select = document.getElementById('request-emp-select');
+            select.innerHTML = '<option value="" disabled selected>Επιλέξτε το όνομά σας...</option>';
+            employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = `${emp.name} (${emp.role})`;
+                select.appendChild(opt);
+            });
+
+            // Week selector for requests
+            const weekSelect = document.getElementById('request-week');
+            weekSelect.innerHTML = '';
+            for (let w = 1; w <= scheduleHorizonWeeks; w++) {
+                const opt = document.createElement('option');
+                opt.value = w;
+                opt.textContent = `${w}η Εβδομάδα`;
+                weekSelect.appendChild(opt);
+            }
+
+            // Sync Read-Only header label
+            document.getElementById('staff-week-indicator').textContent = `${currentActiveWeek}η Εβδομάδα`;
+
+            // Requests status log
+            const tbody = document.getElementById('staff-requests-table');
+            tbody.innerHTML = '';
+
+            if (requests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400 italic text-xs">Δεν υπάρχουν ακόμη αιτήματα.</td></tr>`;
+                return;
+            }
+
+            requests.slice().reverse().forEach(req => {
+                const emp = employees.find(e => e.id === req.employeeId);
+                if (!emp) return;
+
+                let statusBadge = "";
+                if (req.status === 'pending') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 text-[11px] bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-semibold border border-amber-200"><i class="fa-solid fa-clock animate-pulse"></i> Εκκρεμεί</span>`;
+                } else if (req.status === 'approved') {
+                    statusBadge = `<span class="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200"><i class="fa-solid fa-circle-check"></i> Εγκρίθηκε</span>`;
+                } else {
+                    statusBadge = `<span class="inline-flex items-center gap-1 text-[11px] bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full font-semibold border border-red-200"><i class="fa-solid fa-circle-xmark"></i> Απορρίφθηκε</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-bold text-slate-800 text-xs sm:text-sm">${emp.name}</td>
+                    <td class="py-3 px-4 text-indigo-600 font-semibold text-xs sm:text-sm"><i class="fa-solid fa-calendar-day mr-1"></i>Εβδ. ${req.week} - ${req.day}</td>
+                    <td class="py-3 px-4 text-xs text-slate-500 max-w-xs truncate" title="${req.reason || '-'}">${req.reason || '<span class="text-slate-300 italic">Χωρίς αιτιολογία</span>'}</td>
+                    <td class="py-3 px-4 text-center">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = function() {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
+
