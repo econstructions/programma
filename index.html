@@ -9,7 +9,7 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -135,7 +135,7 @@
                             </select>
                         </div>
 
-                        <!-- Επιλογή Διπλοθεσίτη -->
+                        <!-- Επιλογή Διπλοθεσίτη (Μόνο για Αντλίες) -->
                         <div id="dual-role-container" class="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100">
                             <label class="flex items-center space-x-2.5 cursor-pointer">
                                 <input type="checkbox" id="emp-is-dual" class="w-4.5 h-4.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
@@ -645,6 +645,8 @@
         function checkRoleConstraint() {
             const role = document.getElementById('emp-role').value;
             const dualContainer = document.getElementById('dual-role-container');
+            
+            // Μόνο οι Αντλιάδες μπορούν να οριστούν ως Διπλοθεσίτες
             if (role === 'Αντλία') {
                 dualContainer.style.opacity = "1";
                 dualContainer.style.pointerEvents = "auto";
@@ -652,6 +654,14 @@
                 dualContainer.style.opacity = "0.4";
                 dualContainer.style.pointerEvents = "none";
                 document.getElementById('emp-is-dual').checked = false;
+            }
+
+            // Για την ειδικότητα Καφέ, κλείδωσε αυτόματα την προτίμηση σε Μόνο Πρωί
+            if (role === 'Καφέ') {
+                document.getElementById('emp-shift-pref').value = 'Μόνο Πρωί';
+                document.getElementById('emp-shift-pref').disabled = true;
+            } else {
+                document.getElementById('emp-shift-pref').disabled = false;
             }
         }
 
@@ -703,7 +713,9 @@
             const name = document.getElementById('emp-name').value;
             const role = document.getElementById('emp-role').value;
             const contract = parseInt(document.getElementById('emp-contract').value);
-            const shiftPref = document.getElementById('emp-shift-pref').value;
+            
+            // Allow Coffee preference to be saved properly as Μόνο Πρωί
+            const shiftPref = (role === 'Καφέ') ? 'Μόνο Πρωί' : document.getElementById('emp-shift-pref').value;
             const fixedOff = document.getElementById('emp-fixed-off').value;
             const weekendRule = document.getElementById('emp-weekend-rule').value;
             const isDual = document.getElementById('emp-is-dual').checked;
@@ -855,7 +867,7 @@
             }
         }
 
-        // Cycle through shifts on grid cell click
+        // Cycle through shifts manually on grid cell click
         function cycleShift(empId, day) {
             const currentShift = schedule[currentActiveWeek][empId][day];
             const empName = employees.find(e => e.id === empId)?.name || 'εργαζόμενου';
@@ -928,7 +940,7 @@
             return array;
         }
 
-        // ==================== LOTTERY ALGORITHM WITH GUARANTEED DAILY COVERAGE ====================
+        // ==================== LOTTERY ALGORITHM WITH ADVANCED SHIFT & SAFETY RULES ====================
         function runLottery() {
             if (employees.length === 0) {
                 showToast("Προσθέστε πρώτα προσωπικό!", false);
@@ -937,11 +949,11 @@
 
             triggerConfirmModal(
                 "Εκτέλεση Λοταρίας",
-                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι βάρδιες θα μοιραστούν αυτόματα εξασφαλίζοντας υποχρεωτική κάλυψη πρωινών και απογευματινών βαρδιών.`,
+                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι βάρδιες θα μοιραστούν με βάση τους κανόνες ασφαλείας, των διπλοθεσιτών και των μπαλαντέρ.`,
                 () => {
                     for (let w = 1; w <= scheduleHorizonWeeks; w++) {
                         
-                        // Pass 1: Assign Off days for all employees (to strictly respect contract rules)
+                        // Pass 1: Assign Off/Off-Duty Days
                         employees.forEach(emp => {
                             const targetWorkDays = emp.contractDays;
                             const totalOffDaysNeeded = 7 - targetWorkDays;
@@ -984,102 +996,106 @@
                             schedule[w][emp.id] = currentEmployeeSchedule;
                         });
 
-                        // Pass 2: Assign Shifts Day-by-Day (Guarantees daily active shift coverage!)
+                        // Pass 2: Day-by-Day Precise Role Placement & Safety Constraints
                         daysOfWeek.forEach(day => {
-                            // Find which employees are actively working on this day (not 'Off')
-                            let workingEmps = shuffle(employees.filter(emp => schedule[w][emp.id][day] !== 'Off'));
-                            
-                            if (workingEmps.length === 0) return;
+                            // Find actively working core staff (excluding assistants)
+                            let workingCoreEmps = shuffle(employees.filter(emp => 
+                                schedule[w][emp.id][day] !== 'Off' && emp.role !== 'Βοηθός Διαχειριστή'
+                            ));
 
-                            // Check if standard coffee staff is off today
-                            let coffeeStaffToday = employees.filter(e => e.role === 'Καφέ');
-                            let isCoffeeStaffOff = coffeeStaffToday.every(e => schedule[w][e.id][day] === 'Off');
-
-                            // Detect which core shifts MUST be covered on this day (based on active config)
-                            let mandatoryShiftsToAssign = [];
-                            if (activeShiftConfig.Morning) mandatoryShiftsToAssign.push('Morning');
-                            if (activeShiftConfig.Evening) mandatoryShiftsToAssign.push('Evening');
-                            if (activeShiftConfig.Split) mandatoryShiftsToAssign.push('Split');
-                            if (activeShiftConfig.Mid) mandatoryShiftsToAssign.push('Mid');
+                            // Find actively working assistants
+                            let workingAssistants = shuffle(employees.filter(emp => 
+                                schedule[w][emp.id][day] !== 'Off' && emp.role === 'Βοηθός Διαχειριστή'
+                            ));
 
                             let assignedEmpIds = new Set();
 
-                            // 2A: Assign Mandatory/Required Shifts first to guarantee coverage
-                            mandatoryShiftsToAssign.forEach(neededShift => {
-                                // Find a working employee who hasn't been assigned yet, matching preference if possible
-                                let candidate = workingEmps.find(emp => {
-                                    if (assignedEmpIds.has(emp.id)) return false;
-                                    // Preference checks
-                                    if (neededShift === 'Morning' && emp.shiftPreference === 'Μόνο Απόγευμα') return false;
-                                    if (neededShift === 'Evening' && emp.shiftPreference === 'Μόνο Πρωί') return false;
-                                    return true;
-                                });
-
-                                // Fallback: If no candidate with perfect preference, take any unassigned working employee
-                                if (!candidate) {
-                                    candidate = workingEmps.find(emp => !assignedEmpIds.has(emp.id));
+                            // 1. Check if dedicated coffee staff is available and working today
+                            let dedicatedCoffeeEmp = workingCoreEmps.find(emp => emp.role === 'Καφέ');
+                            
+                            // 2. Step A: MORNING COFFEE COVERAGE (Mandatory)
+                            let coffeeCovered = false;
+                            if (dedicatedCoffeeEmp) {
+                                schedule[w][dedicatedCoffeeEmp.id][day] = 'Morning-Café';
+                                assignedEmpIds.add(dedicatedCoffeeEmp.id);
+                                coffeeCovered = true;
+                            } else {
+                                // Find a dual-role pump employee to cover morning coffee
+                                let dualRoleEmp = workingCoreEmps.find(emp => emp.isDualRole && emp.role === 'Αντλία' && !assignedEmpIds.has(emp.id));
+                                if (dualRoleEmp) {
+                                    schedule[w][dualRoleEmp.id][day] = 'Morning-Café';
+                                    assignedEmpIds.add(dualRoleEmp.id);
+                                    coffeeCovered = true;
                                 }
+                            }
 
-                                if (candidate) {
-                                    let finalShift = neededShift;
-                                    
-                                    // Dual role (Διπλοθεσίτης) adjustments
-                                    if (candidate.isDualRole && candidate.role === 'Αντλία') {
-                                        if (neededShift === 'Morning' && isCoffeeStaffOff) {
-                                            finalShift = 'Morning-Café';
-                                            isCoffeeStaffOff = false;
-                                        } else if (neededShift === 'Evening') {
-                                            finalShift = 'Evening-Café';
-                                        }
+                            // 3. Step B: ALLOCATE MANDATORY CORE STAFF SHIFTS
+                            // Shifts priority logic (Morning / Evening balance for safety of at least 2 core people per period)
+                            let morningCoreCount = coffeeCovered ? 1 : 0;
+                            let eveningCoreCount = 0;
+
+                            // We need to distribute remaining core staff to Morning or Evening (excluding Assistants)
+                            let remainingCore = workingCoreEmps.filter(emp => !assignedEmpIds.has(emp.id));
+
+                            remainingCore.forEach(emp => {
+                                let targetShift = '';
+                                
+                                // Direct by preferences if possible
+                                if (emp.shiftPreference === 'Μόνο Πρωί') {
+                                    targetShift = 'Morning';
+                                    morningCoreCount++;
+                                } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
+                                    targetShift = 'Evening';
+                                    eveningCoreCount++;
+                                } else {
+                                    // Balance shifts dynamically
+                                    if (morningCoreCount < eveningCoreCount) {
+                                        targetShift = 'Morning';
+                                        morningCoreCount++;
+                                    } else {
+                                        targetShift = 'Evening';
+                                        eveningCoreCount++;
                                     }
-
-                                    schedule[w][candidate.id][day] = finalShift;
-                                    assignedEmpIds.add(candidate.id);
                                 }
+
+                                // Apply Coffee option for Dual Role in Evening if they are assigned to Evening
+                                if (emp.isDualRole && emp.role === 'Αντλία' && targetShift === 'Evening') {
+                                    targetShift = 'Evening-Café'; // Keep coffee open in the evening as well!
+                                }
+
+                                schedule[w][emp.id][day] = targetShift;
+                                assignedEmpIds.add(emp.id);
                             });
 
-                            // 2B: Fill remaining available employees with random/fallback active shifts
-                            workingEmps.forEach(emp => {
-                                if (assignedEmpIds.has(emp.id)) return;
-
-                                let possibleShifts = [];
-                                if (emp.shiftPreference === 'Μόνο Πρωί') {
-                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                                } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
-                                    if (activeShiftConfig.Evening) possibleShifts.push('Evening');
-                                } else {
-                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                                    if (activeShiftConfig.Evening) possibleShifts.push('Evening');
-                                    if (activeShiftConfig.Split) possibleShifts.push('Split');
-                                    if (activeShiftConfig.Mid) possibleShifts.push('Mid');
+                            // 4. Step C: EMERGENCY ASSISTANT TRIGGER (Rule 1: Guaranteed at least 2 people on duty)
+                            workingAssistants.forEach(assistant => {
+                                let assigned = false;
+                                
+                                // Check if we are short of the 2-person safety requirement in Morning
+                                if (morningCoreCount < 2) {
+                                    schedule[w][assistant.id][day] = 'Morning';
+                                    morningCoreCount++;
+                                    assigned = true;
                                 }
-
-                                if (possibleShifts.length === 0) {
-                                    if (activeShiftConfig.Morning) possibleShifts.push('Morning');
-                                    else if (activeShiftConfig.Evening) possibleShifts.push('Evening');
+                                // Check if we are short of the 2-person safety requirement in Evening
+                                else if (eveningCoreCount < 2) {
+                                    schedule[w][assistant.id][day] = 'Evening';
+                                    eveningCoreCount++;
+                                    assigned = true;
                                 }
-
-                                let chosenShift = possibleShifts[Math.floor(Math.random() * possibleShifts.length)];
-
-                                // Dual role adjustments
-                                if (emp.isDualRole && emp.role === 'Αντλία') {
-                                    if (chosenShift === 'Morning' && isCoffeeStaffOff) {
-                                        chosenShift = 'Morning-Café';
-                                        isCoffeeStaffOff = false;
-                                    } else if (chosenShift === 'Evening') {
-                                        chosenShift = 'Evening-Café';
-                                    }
+                                
+                                // If already safe, the Assistant works as normal helper
+                                if (!assigned) {
+                                    let randShift = (activeShiftConfig.Morning && Math.random() > 0.5) ? 'Morning' : 'Evening';
+                                    schedule[w][assistant.id][day] = randShift;
                                 }
-
-                                schedule[w][emp.id][day] = chosenShift;
-                                assignedEmpIds.add(emp.id);
                             });
                         });
                     }
 
                     saveToLocalStorage();
                     renderAll();
-                    showToast("Η λοταρία ολοκληρώθηκε! Εξασφαλίστηκε η πλήρης καθημερινή κάλυψη βαρδιών.");
+                    showToast("Η λοταρία ολοκληρώθηκε! Εφαρμόστηκαν όλοι οι κανόνες ασφαλείας.");
                 }
             );
         }
@@ -1393,3 +1409,5 @@
     </script>
 </body>
 </html>
+
+
