@@ -9,7 +9,7 @@
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -646,7 +646,6 @@
             const role = document.getElementById('emp-role').value;
             const dualContainer = document.getElementById('dual-role-container');
             
-            // Μόνο οι Αντλιάδες μπορούν να οριστούν ως Διπλοθεσίτες
             if (role === 'Αντλία') {
                 dualContainer.style.opacity = "1";
                 dualContainer.style.pointerEvents = "auto";
@@ -656,7 +655,6 @@
                 document.getElementById('emp-is-dual').checked = false;
             }
 
-            // Για την ειδικότητα Καφέ, κλείδωσε αυτόματα την προτίμηση σε Μόνο Πρωί
             if (role === 'Καφέ') {
                 document.getElementById('emp-shift-pref').value = 'Μόνο Πρωί';
                 document.getElementById('emp-shift-pref').disabled = true;
@@ -714,7 +712,6 @@
             const role = document.getElementById('emp-role').value;
             const contract = parseInt(document.getElementById('emp-contract').value);
             
-            // Allow Coffee preference to be saved properly as Μόνο Πρωί
             const shiftPref = (role === 'Καφέ') ? 'Μόνο Πρωί' : document.getElementById('emp-shift-pref').value;
             const fixedOff = document.getElementById('emp-fixed-off').value;
             const weekendRule = document.getElementById('emp-weekend-rule').value;
@@ -940,7 +937,7 @@
             return array;
         }
 
-        // ==================== LOTTERY ALGORITHM WITH ADVANCED SHIFT & SAFETY RULES ====================
+        // ==================== LOTTERY ALGORITHM WITH STRICT SHIFT & SAFETY CAPACITY RULES ====================
         function runLottery() {
             if (employees.length === 0) {
                 showToast("Προσθέστε πρώτα προσωπικό!", false);
@@ -949,7 +946,7 @@
 
             triggerConfirmModal(
                 "Εκτέλεση Λοταρίας",
-                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι βάρδιες θα μοιραστούν με βάση τους κανόνες ασφαλείας, των διπλοθεσιτών και των μπαλαντέρ.`,
+                `Θέλετε να τρέξει η αυτόματη λοταρία για τις ${scheduleHorizonWeeks} εβδομάδες; Οι βάρδιες θα μοιραστούν με βάση τους κανόνες ασφαλείας, των διπλοθεσιτών, των μπαλαντέρ και της μέγιστης χωρητικότητας.`,
                 () => {
                     for (let w = 1; w <= scheduleHorizonWeeks; w++) {
                         
@@ -1009,6 +1006,8 @@
                             ));
 
                             let assignedEmpIds = new Set();
+                            let morningCount = 0;
+                            let eveningCount = 0;
 
                             // 1. Check if dedicated coffee staff is available and working today
                             let dedicatedCoffeeEmp = workingCoreEmps.find(emp => emp.role === 'Καφέ');
@@ -1018,6 +1017,7 @@
                             if (dedicatedCoffeeEmp) {
                                 schedule[w][dedicatedCoffeeEmp.id][day] = 'Morning-Café';
                                 assignedEmpIds.add(dedicatedCoffeeEmp.id);
+                                morningCount++;
                                 coffeeCovered = true;
                             } else {
                                 // Find a dual-role pump employee to cover morning coffee
@@ -1025,69 +1025,71 @@
                                 if (dualRoleEmp) {
                                     schedule[w][dualRoleEmp.id][day] = 'Morning-Café';
                                     assignedEmpIds.add(dualRoleEmp.id);
+                                    morningCount++;
                                     coffeeCovered = true;
                                 }
                             }
 
                             // 3. Step B: ALLOCATE MANDATORY CORE STAFF SHIFTS
-                            // Shifts priority logic (Morning / Evening balance for safety of at least 2 core people per period)
-                            let morningCoreCount = coffeeCovered ? 1 : 0;
-                            let eveningCoreCount = 0;
-
-                            // We need to distribute remaining core staff to Morning or Evening (excluding Assistants)
                             let remainingCore = workingCoreEmps.filter(emp => !assignedEmpIds.has(emp.id));
 
                             remainingCore.forEach(emp => {
                                 let targetShift = '';
                                 
-                                // Direct by preferences if possible
-                                if (emp.shiftPreference === 'Μόνο Πρωί') {
+                                // Direct by preferences first, respecting strict afternoon limit of 2
+                                if (emp.shiftPreference === 'Μόνο Πρωί' && morningCount < 3) {
                                     targetShift = 'Morning';
-                                    morningCoreCount++;
-                                } else if (emp.shiftPreference === 'Μόνο Απόγευμα') {
+                                    morningCount++;
+                                } else if (emp.shiftPreference === 'Μόνο Απόγευμα' && eveningCount < 2) {
                                     targetShift = 'Evening';
-                                    eveningCoreCount++;
+                                    eveningCount++;
                                 } else {
-                                    // Balance shifts dynamically
-                                    if (morningCoreCount < eveningCoreCount) {
-                                        targetShift = 'Morning';
-                                        morningCoreCount++;
-                                    } else {
+                                    // Balance shifts dynamically respecting limit constraints
+                                    // Evening is strictly capped at 2. Morning is capped at 3 with assistant.
+                                    if (eveningCount < 2) {
                                         targetShift = 'Evening';
-                                        eveningCoreCount++;
+                                        eveningCount++;
+                                    } else if (morningCount < 3) {
+                                        targetShift = 'Morning';
+                                        morningCount++;
+                                    } else {
+                                        // Force Off if there are absolutely no spots available
+                                        targetShift = 'Off';
                                     }
                                 }
 
-                                // Apply Coffee option for Dual Role in Evening if they are assigned to Evening
-                                if (emp.isDualRole && emp.role === 'Αντλία' && targetShift === 'Evening') {
-                                    targetShift = 'Evening-Café'; // Keep coffee open in the evening as well!
+                                if (targetShift !== 'Off') {
+                                    // Apply Coffee option for Dual Role in Evening if they are assigned to Evening
+                                    if (emp.isDualRole && emp.role === 'Αντλία' && targetShift === 'Evening') {
+                                        targetShift = 'Evening-Café';
+                                    }
+                                    schedule[w][emp.id][day] = targetShift;
+                                    assignedEmpIds.add(emp.id);
+                                } else {
+                                    schedule[w][emp.id][day] = 'Off';
                                 }
-
-                                schedule[w][emp.id][day] = targetShift;
-                                assignedEmpIds.add(emp.id);
                             });
 
-                            // 4. Step C: EMERGENCY ASSISTANT TRIGGER (Rule 1: Guaranteed at least 2 people on duty)
+                            // 4. Step C: EMERGENCY ASSISTANT TRIGGER (Rule 1 & Rule 3: Morning up to 3 with assistant, Evening STRICTLY 2)
                             workingAssistants.forEach(assistant => {
                                 let assigned = false;
                                 
-                                // Check if we are short of the 2-person safety requirement in Morning
-                                if (morningCoreCount < 2) {
-                                    schedule[w][assistant.id][day] = 'Morning';
-                                    morningCoreCount++;
+                                // Evening must be EXACTLY 2. If it's less than 2, try to cover it.
+                                if (eveningCount < 2) {
+                                    schedule[w][assistant.id][day] = 'Evening';
+                                    eveningCount++;
                                     assigned = true;
                                 }
-                                // Check if we are short of the 2-person safety requirement in Evening
-                                else if (eveningCoreCount < 2) {
-                                    schedule[w][assistant.id][day] = 'Evening';
-                                    eveningCoreCount++;
+                                // Morning can have up to 3 people (including assistant).
+                                else if (morningCount < 3) {
+                                    schedule[w][assistant.id][day] = 'Morning';
+                                    morningCount++;
                                     assigned = true;
                                 }
                                 
-                                // If already safe, the Assistant works as normal helper
+                                // If already safe and filled, assistant is set to Off to respect the strict limits
                                 if (!assigned) {
-                                    let randShift = (activeShiftConfig.Morning && Math.random() > 0.5) ? 'Morning' : 'Evening';
-                                    schedule[w][assistant.id][day] = randShift;
+                                    schedule[w][assistant.id][day] = 'Off';
                                 }
                             });
                         });
@@ -1095,7 +1097,7 @@
 
                     saveToLocalStorage();
                     renderAll();
-                    showToast("Η λοταρία ολοκληρώθηκε! Εφαρμόστηκαν όλοι οι κανόνες ασφαλείας.");
+                    showToast("Η λοταρία ολοκληρώθηκε! Το απόγευμα έχει αυστηρά 2 άτομα, το πρωί έως 3.");
                 }
             );
         }
@@ -1349,7 +1351,7 @@
 
         function renderStaffForm() {
             const select = document.getElementById('request-emp-select');
-            select.innerHTML = '<option value="" disabled selected>Επιλέξτε το όνομά σας...</option>';
+            select.innerHTML = '<option value="" disabled selected>Επιλέξτε το όνομά...</option>';
             employees.forEach(emp => {
                 const opt = document.createElement('option');
                 opt.value = emp.id;
@@ -1409,5 +1411,3 @@
     </script>
 </body>
 </html>
-
-
